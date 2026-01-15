@@ -1,0 +1,82 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Build / distribution
+build/
+dist/
+*.egg-info/
+
+# =========================
+# Testing / coverage
+# =========================
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# =========================
+# Logs & runtime artifacts
+# =========================
+*.log
+logs/
+tmp/
+*.pid
+
+# =========================
+# LangChain / LLM artifacts
+# =========================
+.langchain/
+langchain.db
+*.sqlite
+*.db
+
+# Vector stores (common)
+chroma/
+faiss/
+qdrant/
+
+# =========================
+# State / local data
+# =========================
+state/
+data/
+cache/
+
+# =========================
+# Secrets & env files
+# =========================
+.env
+.env.*
+*.key
+*.pem
+secrets.json
+
+# =========================
+# Jupyter
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Editors / IDEs
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
