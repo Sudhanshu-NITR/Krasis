@@ -22,7 +22,7 @@ class SitemapMonitor:
         if os.path.exists(self.state_file):
             with open(self.state_file, "r") as f:
                 return json.load(f)
-        return {}
+        return {}   
     
     def _save_state(self, current_state):
         """Persists the current state to disk."""
@@ -70,6 +70,6 @@ class SitemapMonitor:
         return updates_needed
 
 
-loader = SitemapMonitor('https://docs.langchain.com/sitemap.xml')
-
-loader.fetch_and_diff()
+if __name__ == "__main__":
+    loader = SitemapMonitor('https://docs.langchain.com/sitemap.xml')
+    loader.fetch_and_diff()
