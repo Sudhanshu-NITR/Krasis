@@ -10,3 +10,12 @@ STATE_FILE_PATH = os.path.join(DATA_DIR, "state", "sitemap_state.json")
 
 # Scheduling
 CHECK_INTERVAL_HOURS = 24
+
+# Pinecone
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+PINECONE_INDEX_NAME = "langchain-hybrid-search"
+EMBEDDING_DIM = 3072
+
+# Gemini (dense embeddings)
+GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
+GEMINI_EMBED_MODEL = "models/embedding-001"
