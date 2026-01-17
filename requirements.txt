@@ -12,3 +12,6 @@ langchain-classic
 
 google-generativeai
 langchain-google-genai
+
+pinecone-text
+pinecone-client

@@ -80,3 +80,6 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+extract.py
+all_python_files.txt
