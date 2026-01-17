@@ -5,13 +5,23 @@ import xml.etree.ElementTree as ET
 from config.settings import STATE_FILE_PATH
 
 class SitemapMonitor:
+    """
+    Monitors a sitemap for newly added or updated URLs
+    """
+
     def __init__(self, url):
+        """
+        Initialize the sitemap monitor.
+        """
         self.url = url
         self.state_file = STATE_FILE_PATH
         self._ensure_state_dir()
         self.previous_state = self._load_state()
 
     def _ensure_state_dir(self):
+        """
+        Ensure the directory for the sitemap state file exists.
+        """
         dir_path = os.path.dirname(self.state_file)
         if dir_path:
             os.makedirs(dir_path, exist_ok=True)
@@ -30,6 +40,9 @@ class SitemapMonitor:
             json.dump(current_state, f ,indent=4)
 
     def fetch_and_diff(self):
+        """
+        Fetch the sitemap and detect new or modified URLs.
+        """
         print(f"[*] Fetching sitemap from {self.url}...")
 
         try:
