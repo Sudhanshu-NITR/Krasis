@@ -9,3 +9,6 @@ langchain
 langchain-community
 langchain-core
 langchain-classic
+
+google-generativeai
+langchain-google-genai

@@ -1,5 +1,7 @@
 from queue import Queue
 import time
+from src.ingestion.pipeline import process_url
+
 
 class IngestionQueue:
     """
@@ -17,41 +19,36 @@ class IngestionQueue:
 
     def add(self, items):
         """
-        Add one or more items to the ingestion queue
+        Add one or more items to the ingestion queue.
         """
         if not items:
-            return 
-        
+            return
+
         for item in items:
             self._queue.put(item)
+
         print(f"[*] Added {len(items)} items to queue.")
 
     def process(self):
+        """
+        Process all items currently in the queue.
+        """
         if self._queue.empty():
-            print("[*] Queue empty.")
+            print("[*] Queue Empty.")
             return
 
-        print("\n--- STARTING BATCH ---")
+        print("\n--- STARTING INGESTION BATCH ---")
+
         while not self._queue.empty():
             url = self._queue.get()
-
             print(f"    Processing: {url}")
 
-            raw = self.loader.load(url)
-            if not raw:
+            try:
+                process_url(url)
+                time.sleep(0.1)  # polite throttling
+            except Exception as e:
+                print(f"    [!] Error processing {url}: {e}")
+            finally:
                 self._queue.task_done()
-                continue
 
-            docs = self.splitter.split(
-                raw["content"],
-                source_url=raw["source_url"],
-                doc_id=raw["doc_id"],
-            )
-
-            print(f"    → Generated {len(docs)} chunks")
-
-            # TODO: persist docs to vector store here
-
-            self._queue.task_done()
-
-        print("--- BATCH COMPLETE ---\n")
+        print("--- INGESTION BATCH COMPLETE ---\n")
