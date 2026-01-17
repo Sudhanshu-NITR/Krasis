@@ -27,19 +27,31 @@ class IngestionQueue:
         print(f"[*] Added {len(items)} items to queue.")
 
     def process(self):
-        """
-        Process all items currently in the queue.
-        """
         if self._queue.empty():
-            print("[*] Queue Empty.")
+            print("[*] Queue empty.")
+            return
 
         print("\n--- STARTING BATCH ---")
         while not self._queue.empty():
             url = self._queue.get()
 
-            # TODO: Call src.ingestion.loaders.process_url(urk) here
             print(f"    Processing: {url}")
-            time.sleep(0.1) 
-            
+
+            raw = self.loader.load(url)
+            if not raw:
+                self._queue.task_done()
+                continue
+
+            docs = self.splitter.split(
+                raw["content"],
+                source_url=raw["source_url"],
+                doc_id=raw["doc_id"],
+            )
+
+            print(f"    → Generated {len(docs)} chunks")
+
+            # TODO: persist docs to vector store here
+
             self._queue.task_done()
+
         print("--- BATCH COMPLETE ---\n")

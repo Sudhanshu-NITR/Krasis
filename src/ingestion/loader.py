@@ -24,7 +24,8 @@ class MarkdownLoader:
             print(f"[MarkdownLoader] Failed to fetch {md_url}: {e}")
             return None
 
-        content = resp.text
+        raw_md = resp.text
+        content = self.strip_after_footer(raw_md)
 
         return {
             "doc_id": self._stable_id(md_url),
@@ -35,7 +36,7 @@ class MarkdownLoader:
             "source_type": "markdown",
             "fetched_at": time.time(),
         }
-
+    
     @staticmethod
     def _to_markdown_url(url: str) -> str:
         return url.rstrip("/") + ".md"
@@ -44,17 +45,17 @@ class MarkdownLoader:
     def _stable_id(url: str) -> str:
         return hashlib.sha256(url.encode()).hexdigest()
     
-
-    # TODO WARNING: This is only relevant to LangChain Docs
     @staticmethod
     def strip_after_footer(md: str) -> str:
+        # TODO: This might create problem for documentations other than LangChain
+
         """
         Removes everything after the first '***' divider.
+        LangChain-docs specific cleanup.
         """
         if "***" in md:
             return md.split("***", 1)[0].strip()
         return md.strip()
-    
 
 if __name__ == "__main__": 
     loader = MarkdownLoader() 
@@ -62,4 +63,4 @@ if __name__ == "__main__":
     data = loader.load(test_url) 
     if data: 
         # print(f"\nSuccessfully loaded {len(data['content'])} chars from {data['source']}") 
-        print(data['content'])
+        print(data['content'])  
