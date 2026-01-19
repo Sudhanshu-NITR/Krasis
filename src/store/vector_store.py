@@ -29,9 +29,9 @@ class VectorStore:
 
         # Prepare upsert payload
         upsert_batch = []
-        for doc, dense, sparse in zip(docs, dense_vecs, sparse_vecs):
+        for i, (doc, dense, sparse) in enumerate(zip(docs, dense_vecs, sparse_vecs)):
             upsert_batch.append({
-                "id": doc.metadata["doc_id"],
+                "id": f"{doc.metadata['doc_id']}::chunk_{i}",
                 "values": dense,
                 "sparse_values": sparse,
                 "metadata": doc.metadata,
@@ -41,3 +41,14 @@ class VectorStore:
         self.hybrid_store.upsert(upsert_batch)
 
         print(f"[VectorStore] Upserted {len(upsert_batch)} hybrid vectors.")
+
+    def delete_by_source_url(self, source_url: str):
+        """
+        Delete all vectors belonging to a specific source URL.
+        """
+        self.hybrid_store.index.delete(
+            filter={
+                "source_url": {"$eq": source_url}
+            }
+        )
+        print(f"[VectorStore] Deleted vectors for source_url={source_url}")
