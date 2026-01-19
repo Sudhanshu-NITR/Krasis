@@ -1,86 +1,85 @@
 import requests
-import json
-import os
 import xml.etree.ElementTree as ET
-from config.settings import STATE_FILE_PATH
+from datetime import datetime
+
+from config.settings import STATE_DB_PATH
+from src.ingestion.sitemap_state import SitemapState
+from src.ingestion.sqlite_queue import SQLiteQueue
+
 
 class SitemapMonitor:
     """
-    Monitors a sitemap for newly added or updated URLs
+    Monitors a sitemap and enqueues new or modified URLs
+    into the persistent ingestion queue.
     """
 
-    def __init__(self, url):
-        """
-        Initialize the sitemap monitor.
-        """
-        self.url = url
-        self.state_file = STATE_FILE_PATH
-        self._ensure_state_dir()
-        self.previous_state = self._load_state()
+    def __init__(self, sitemap_url: str):
+        self.sitemap_url = sitemap_url
 
-    def _ensure_state_dir(self):
-        """
-        Ensure the directory for the sitemap state file exists.
-        """
-        dir_path = os.path.dirname(self.state_file)
-        if dir_path:
-            os.makedirs(dir_path, exist_ok=True)
+        self.state = SitemapState(
+            db_path=STATE_DB_PATH,
+            table="langchain_sitemap_urls"
+        )
 
-
-    def _load_state(self):
-        """Loads the last known state of urls and timestamps."""
-        if os.path.exists(self.state_file):
-            with open(self.state_file, "r") as f:
-                return json.load(f)
-        return {}   
-    
-    def _save_state(self, current_state):
-        """Persists the current state to disk."""
-        with open(self.state_file, 'w') as f:
-            json.dump(current_state, f ,indent=4)
+        self.queue = SQLiteQueue(
+            db_path=STATE_DB_PATH,
+            table="ingestion_queue"
+        )
 
     def fetch_and_diff(self):
-        """
-        Fetch the sitemap and detect new or modified URLs.
-        """
-        print(f"[*] Fetching sitemap from {self.url}...")
+        print(f"[*] Fetching sitemap from {self.sitemap_url}...")
 
         try:
-            response = requests.get(self.url, timeout=10)
+            response = requests.get(self.sitemap_url, timeout=10)
             response.raise_for_status()
         except requests.RequestException as e:
-            print(f"[!] Error fetching Sitemap: {e}")
-            return []
+            print(f"[!] Error fetching sitemap: {e}")
+            return
 
         root = ET.fromstring(response.content)
-
         ns = {"ns": "http://www.sitemaps.org/schemas/sitemap/0.9"}
-
-        current_state = {}
-        updates_needed = []
 
         urls = root.findall("ns:url", ns)
         print(f"[*] Analyzing {len(urls)} URLs for updates...")
 
-        for url in urls:
-            loc = url.find("ns:loc", ns).text
+        for url_node in urls:
+            loc = url_node.find("ns:loc", ns).text
 
-            lastmod_tag = url.find("ns:lastmod", ns)
+            lastmod_tag = url_node.find("ns:lastmod", ns)
             lastmod = lastmod_tag.text if lastmod_tag is not None else "N/A"
 
-            current_state[loc] = lastmod
+            previous_lastmod = self.state.get_lastmod(loc)
 
-            if loc not in self.previous_state:
-                print(f"    [+] New URL found: {loc}")
-                updates_needed.append(loc)
-            elif self.previous_state[loc] != lastmod:
-                print(f"    [~] Modified URL found: {loc}")
-                updates_needed.append(loc)
+            last_ingested_at = self.state.get_last_ingested_at(loc)
 
-        self._save_state(current_state)
-        self.previous_state = current_state
+            # If already ingested AFTER lastmod → skip
+            if last_ingested_at and lastmod != "N/A":
+                try:
+                    lastmod_ts = datetime.fromisoformat(lastmod.replace("Z", "")).timestamp()
+                    if last_ingested_at > lastmod_ts:
+                        continue  # ignore this URL
+                except Exception:
+                    pass
 
-        return updates_needed
+            # NEW URL or UPDATED URL → enqueue
+            if previous_lastmod is None:
+                print(f"    [+] New URL: {loc}")
+                self.queue.enqueue_or_update(
+                    url=loc,
+                    lastmod=lastmod,
+                    priority=1
+                )
+
+            elif previous_lastmod != lastmod:
+                print(f"    [~] Modified URL: {loc}")
+                self.queue.enqueue_or_update(
+                    url=loc,
+                    lastmod=lastmod,
+                    priority=2  # higher priority for updates
+                )
+
+            # Always update sitemap state
+            self.state.upsert(loc, lastmod)
 
 
 if __name__ == "__main__":

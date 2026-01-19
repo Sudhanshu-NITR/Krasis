@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Target Documentation
 SITEMAP_URL = "https://docs.langchain.com/sitemap.xml"
@@ -6,7 +9,7 @@ SITEMAP_URL = "https://docs.langchain.com/sitemap.xml"
 # Paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, "data")
-STATE_FILE_PATH = os.path.join(DATA_DIR, "state", "sitemap_state.json")
+STATE_DB_PATH = os.path.join(DATA_DIR, "state", "sitemap_state.db")
 
 # Scheduling
 CHECK_INTERVAL_HOURS = 24
@@ -17,5 +20,5 @@ PINECONE_INDEX_NAME = "langchain-hybrid-search"
 EMBEDDING_DIM = 3072
 
 # Gemini (dense embeddings)
-GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 GEMINI_EMBED_MODEL = "models/embedding-001"
