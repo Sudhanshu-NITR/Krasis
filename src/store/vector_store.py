@@ -5,12 +5,13 @@ from pinecone import ServerlessSpec
 from langchain_classic.schema import Document
 from src.store.embeddings import GeminiEmbeddingClient
 from langchain_community.retrievers import PineconeHybridSearchRetriever
+from pinecone_text.sparse import BM25Encoder
 
 from config.settings import (
     PINECONE_API_KEY,
     PINECONE_INDEX_NAME,
     EMBEDDING_DIM,
-    PINECONE_NAMESPACE,
+    PINECONE_NAMESPACE, 
 )
 
 class PineconeVectorStore:
@@ -38,6 +39,7 @@ class PineconeVectorStore:
         self.index = self.pc.Index(name=PINECONE_INDEX_NAME)
 
         self.embeddings = GeminiEmbeddingClient()
+        self.bm25_encoder = BM25Encoder().default()
 
     
     def delete_by_source_url(self, source_url: str):
@@ -53,28 +55,29 @@ class PineconeVectorStore:
 
     def upsert_documents(self, docs: List[Document]):
         texts = [doc.page_content for doc in docs]
-        dense_vectors = self.embeddings.embed_documents(
-            texts
-        )
-
-        print("Hi")
+        
+        dense_vectors = self.embeddings.embed_documents(texts)
+        sparse_vectors = self.bm25_encoder.encode_documents(texts)
 
         vectors = []
-        for i, (doc, dense) in enumerate(zip(docs, dense_vectors)):
+        for i, (doc, dense, sparse) in enumerate(zip(docs, dense_vectors, sparse_vectors)):
+            metadata = doc.metadata.copy()
+            metadata["context"] = doc.page_content
+            
             vectors.append({
-                "id": f"{doc.metadata['doc_id']}::chunk_{i}",
+                "id": f"{doc.metadata.get('doc_id', 'unknown')}::chunk_{i}",
                 "values": dense,
-                "metadata": doc.metadata,
+                "sparse_values": sparse, 
+                "metadata": metadata,
             })
 
         self.index.upsert(vectors=vectors, namespace=PINECONE_NAMESPACE)
 
-
     def get_hybrid_retriever(self, top_k: int = 5) -> PineconeHybridSearchRetriever:
         return PineconeHybridSearchRetriever(
+            embeddings=self.embeddings.embeddings,
+            sparse_encoder=self.bm25_encoder,
             index=self.index,
-            sparse_encoder="bm25",
-            embedding_function=self.embeddings.embeddings,
             namespace=PINECONE_NAMESPACE,
             top_k=top_k,
         )
