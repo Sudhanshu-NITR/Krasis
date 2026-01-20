@@ -63,7 +63,7 @@ class SQLiteQueue:
         cur = self.conn.cursor()
 
         try:
-            cur.execute("BEGIN IMMIDIATE")
+            cur.execute("BEGIN IMMEDIATE")
             now = time.time()
             row = cur.execute(
                 f"""

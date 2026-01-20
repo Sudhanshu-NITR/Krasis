@@ -17,8 +17,9 @@ CHECK_INTERVAL_HOURS = 24
 # Pinecone
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_INDEX_NAME = "langchain-hybrid-search"
+PINECONE_NAMESPACE = "langchain_docs"
 EMBEDDING_DIM = 3072
 
 # Gemini (dense embeddings)
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GEMINI_EMBED_MODEL = "models/embedding-001"
+GEMINI_EMBED_MODEL = "models/gemini-embedding-001"
