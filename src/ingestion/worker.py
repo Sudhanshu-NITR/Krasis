@@ -5,7 +5,7 @@ from src.ingestion.sitemap_state import SitemapState
 from config.settings import STATE_DB_PATH
 
 QUEUE_POLL_SECONDS = 2  # base polling interval
-RATE_LIMIT_SECONDS = 60  # naive per-embed delay; make configurable
+RATE_LIMIT_SECONDS = 1  # naive per-embed delay; make configurable
 
 queue = SQLiteQueue(db_path=STATE_DB_PATH, table="ingestion_queue")
 state = SitemapState(db_path=STATE_DB_PATH, table="langchain_sitemap_urls")
@@ -34,3 +34,7 @@ def run_worker():
             # TODO: If it's a quota error you may want to requeue_front
             # For general errors use exponential backoff:
             queue.ack_failure(item_id, err)
+
+
+if __name__ == "__main__":
+    run_worker()

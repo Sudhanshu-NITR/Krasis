@@ -41,3 +41,47 @@ class GeminiEmbeddingClient:
             text,
             task_type="RETRIEVAL_QUERY",
         )
+    
+
+if __name__ == "__main__":
+    print("🔍 Testing GeminiEmbeddingClient...\n")
+
+    client = GeminiEmbeddingClient()
+
+    # ---- Test 1: embed_query ----
+    query = "What is machine learning?"
+    print("Embedding query:", query)
+
+    try:
+        query_embedding = client.embed_query(query)
+        print("✅ Query embedding successful")
+        print("Vector length:", len(query_embedding))
+        print("First 10 values:", query_embedding[:10])
+    except Exception as e:
+        print("❌ Query embedding failed")
+        raise e
+
+    print("\n" + "-" * 50 + "\n")
+
+    # ---- Test 2: embed_documents ----
+    documents = [
+        "Machine learning is a subset of artificial intelligence.",
+        "Deep learning uses neural networks with many layers.",
+        "Embeddings convert text into numerical vectors."
+    ]
+
+    print("Embedding documents:")
+    for i, doc in enumerate(documents, 1):
+        print(f"{i}. {doc}")
+
+    try:
+        doc_embeddings = client.embed_documents(documents)
+        print("\n✅ Document embedding successful")
+        print("Number of embeddings:", len(doc_embeddings))
+        print("Vector length (doc 1):", len(doc_embeddings[0]))
+        print("First 10 values (doc 1):", doc_embeddings[0][:10])
+    except Exception as e:
+        print("❌ Document embedding failed")
+        raise e
+
+    print("\n🎉 All embedding tests passed successfully!")
