@@ -23,3 +23,4 @@ EMBEDDING_DIM = 3072
 # Gemini (dense embeddings)
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 GEMINI_EMBED_MODEL = "models/gemini-embedding-001"
+CHAT_MODEL_NAME = "gemini-2.5-flash"
