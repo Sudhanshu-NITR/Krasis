@@ -27,6 +27,6 @@ CONTEXT:
 def get_prompt_template():
     return ChatPromptTemplate.from_messages([
         ("system", SYSTEM_PROMPT),
-        MessagesPlaceholder(variable_name="chat_history"),
+      #   MessagesPlaceholder(variable_name="chat_history"),
         ("human", "{question}"),
     ])

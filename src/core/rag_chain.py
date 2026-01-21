@@ -25,7 +25,8 @@ def create_rag_chain(retriever, llm):
     # Step 1: Prepare the context and question in parallel
     context_and_question = RunnableParallel({
         "context": retriever | RunnableLambda(format_docs),
-        "question": RunnablePassthrough()
+        "question": RunnablePassthrough(),
+        # "chat_history": 
     })
 
     # Step 2: Combine into the final chain
