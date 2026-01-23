@@ -29,12 +29,12 @@ export default function Navbar() {
                     </button> */}
                     <SignedOut>
                         <SignInButton>
-                            <button className="text-sm text-zinc-400 hover:text-white transition-colors">
+                            <button className="text-sm text-zinc-400 hover:text-white transition-colors cursor-pointer">
                                 Sign In
                             </button>
                         </SignInButton>
                         <SignUpButton>
-                            <button className="bg-white text-black px-4 py-2 rounded-full text-sm font-semibold hover:bg-zinc-200 transition-colors">
+                            <button className="bg-white text-black px-4 py-2 rounded-full text-sm font-semibold hover:bg-zinc-200 transition-colors cursor-pointer">
                                 Get Started
                             </button>
                         </SignUpButton>

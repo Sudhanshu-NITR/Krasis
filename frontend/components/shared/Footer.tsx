@@ -17,7 +17,9 @@ export default function Footer() {
                         Combining Keyword & Semantic Search.
                     </p>
                     <div className="flex gap-4 text-zinc-400">
-                        <Github size={20} className="hover:text-white cursor-pointer" />
+                        <a href="https://github.com/Sudhanshu-NITR/Krasis" target="_blank" rel="noopener noreferrer">
+                            <Github size={20} className="hover:text-white cursor-pointer" />
+                        </a>
                         <Globe size={20} className="hover:text-white cursor-pointer" />
                     </div>
                 </div>
