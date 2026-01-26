@@ -4,7 +4,9 @@ from src.core.rag_chain import create_rag_chain
 
 class DocAssistant:
     def __init__(self):
+        print("Initializing DocAssistant...")
         self.llm = get_google_genai_llm()
+
 
         self.vector_store = PineconeVectorStore()
         self.retriever = self.vector_store.get_hybrid_retriever()

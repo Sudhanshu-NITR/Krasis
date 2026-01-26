@@ -18,6 +18,7 @@ def get_google_genai_llm(model: str = CHAT_MODEL_NAME, temperature: float = 0.2)
         model = model,
         temperature=temperature,
         api_key=GOOGLE_API_KEY,
+        streaming=True,
         # Safety settings are crucial for code-related tasks to prevent 
         # false positives in blocking technical snippets.
         safety_settings={
