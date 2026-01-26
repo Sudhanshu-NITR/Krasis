@@ -9,8 +9,7 @@ import { ChatHeader } from '@/components/chat/ChatHeader';
 import { MessageList } from '@/components/chat/MessageList';
 import { InputArea } from '@/components/chat/InputArea';
 
-const USE_MOCK_API = true;
-const API_URL = "http://localhost:8000/ask";
+const API_URL = "http://localhost:8000/ask/stream"; 
 
 export default function Chat() {
     const [docMode, setDocMode] = useState<DocMode>('stripe');
@@ -24,6 +23,7 @@ export default function Chat() {
         const query = textOverride || input;
         if (!query.trim() || isLoading) return;
 
+        // 1. Add User Message
         const userMsg: Message = {
             id: Date.now().toString(),
             role: 'user',
@@ -31,41 +31,84 @@ export default function Chat() {
             timestamp: Date.now()
         };
 
-        setMessages(prev => [...prev, userMsg]);
+        // 2. Add Placeholder Assistant Message
+        const aiMsgId = (Date.now() + 1).toString();
+        const aiMsg: Message = {
+            id: aiMsgId,
+            role: 'assistant',
+            content: '',
+            sources: [],
+            timestamp: Date.now()
+        };
+
+        setMessages(prev => [...prev, userMsg, aiMsg]);
         setInput('');
         setIsLoading(true);
 
         try {
-            let responseData;
-            if (USE_MOCK_API) {
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                const mockContent = `Here is how you handle this in **${activeMode.name}**.\n\nFirst, initialize the client with your secret key.\n\n\`\`\`javascript\nconst client = new Client({\n  apiKey: process.env.API_KEY,\n  version: '${activeMode.context.version}'\n});\n\nconst result = await client.post('${activeMode.context.popularEndpoints[0]}', {\n  metadata: { source: 'devdocs-ai' }\n});\n\`\`\`\n\nThe API returns a JSON object. Ensure you handle rate limits correctly.`;
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: query, doc_mode: docMode })
+            });
 
-                responseData = {
-                    answer: mockContent,
-                    sources: [{ title: `${activeMode.name} Reference`, url: '#' }, { title: 'Rate Limiting Guide', url: '#' }]
-                };
-            } else {
-                const res = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: query, doc_mode: docMode })
-                });
-                if (!res.ok) throw new Error('API Error');
-                responseData = await res.json();
+            if (!response.body) throw new Error("No response body");
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let isFirstToken = true;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                // Split by double newline as per SSE standard
+                const lines = chunk.split('\n\n');
+
+                for (const line of lines) {
+                    if (line.startsWith("data: ")) {
+                        try {
+                            const jsonStr = line.slice(6);
+                            if (!jsonStr) continue;
+                            
+                            const data = JSON.parse(jsonStr);
+
+                            // Handle Text Token
+                            if (data.token) {
+                                if (isFirstToken) {
+                                    setIsLoading(false); // Stop loading spinner once text starts
+                                    isFirstToken = false;
+                                }
+
+                                setMessages(prev => prev.map(msg => 
+                                    msg.id === aiMsgId 
+                                        ? { ...msg, content: msg.content + data.token }
+                                        : msg
+                                ));
+                            }
+
+                            // Handle Sources (received at end of stream)
+                            if (data.sources) {
+                                setMessages(prev => prev.map(msg => 
+                                    msg.id === aiMsgId 
+                                        ? { ...msg, sources: data.sources }
+                                        : msg
+                                ));
+                            }
+                        } catch (e) {
+                            console.error("Error parsing JSON chunk", e);
+                        }
+                    }
+                }
             }
-
-            const aiMsg: Message = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: responseData.answer || responseData.content,
-                sources: responseData.sources || [],
-                timestamp: Date.now()
-            };
-
-            setMessages(prev => [...prev, aiMsg]);
         } catch (error) {
-            console.error(error);
+            console.error("Streaming error:", error);
+            setMessages(prev => prev.map(msg => 
+                msg.id === aiMsgId 
+                    ? { ...msg, content: msg.content + "\n\n**Error:** Failed to connect to the documentation server." }
+                    : msg
+            ));
         } finally {
             setIsLoading(false);
         }
@@ -73,21 +116,18 @@ export default function Chat() {
 
     return (
         <div className="flex h-screen bg-[#09090b] text-zinc-100 font-sans overflow-hidden selection:bg-white/20">
-
-            {/* Sidebar Left */}
             <SidebarLeft docMode={docMode} setDocMode={setDocMode} onModeSwitch={() => setMessages([])} />
-
-            {/* Main Chat Area */}
+            
             <main className="flex-1 flex flex-col relative min-w-0">
                 <ChatHeader activeMode={activeMode} />
-
+                
                 <MessageList
                     messages={messages}
                     isLoading={isLoading}
                     activeMode={activeMode}
                     onSuggestionClick={handleSendMessage}
                 />
-
+                
                 <InputArea
                     input={input}
                     setInput={setInput}
@@ -96,10 +136,8 @@ export default function Chat() {
                     docMode={docMode}
                 />
             </main>
-
-            {/* Sidebar Right */}
+            
             <SidebarRight activeMode={activeMode} />
-
         </div>
     );
 }

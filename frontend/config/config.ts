@@ -7,7 +7,7 @@ export const MOCK_MODES: Record<DocMode, ModeConfig> = {
         description: 'Framework for LLM apps',
         color: 'text-emerald-400',
         icon: Layers,
-        suggestions: ["Create a custom retrieval chain", "Difference: invoke vs stream", "Using format_documents for RAG"],
+        suggestions: ["How to create a retriever?", "Difference: invoke vs stream", "Using format_documents for RAG"],
         context: {
             version: "v0.1.0",
             baseUrl: "docs.langchain.com",

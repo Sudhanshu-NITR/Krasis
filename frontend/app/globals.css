@@ -1,1 +1,44 @@
 @import "tailwindcss";
+
+@layer utilities {
+
+    /* 1. The Main Scrollbar Track */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+        /* Width of vertical scrollbar */
+        height: 6px;
+        /* Height of horizontal scrollbar */
+    }
+
+    /* 2. The Background (Track) */
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+        /* transparent so it blends with the dark bg */
+    }
+
+    /* 3. The Handle (Thumb) */
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        /* Subtle white-ish gray */
+        border-radius: 100vh;
+        /* Fully rounded pills */
+    }
+
+    /* 4. Handle on Hover */
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
+        /* Slightly brighter on hover */
+    }
+
+    /* Optional: Hide scrollbar for specific areas like the Input box if needed */
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        /* IE and Edge */
+        scrollbar-width: none;
+        /* Firefox */
+    }
+}

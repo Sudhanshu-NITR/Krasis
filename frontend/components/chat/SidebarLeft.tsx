@@ -4,6 +4,7 @@ import { DocMode } from '@/types/types';
 import { MOCK_MODES } from '@/config/config';
 import { useClerk, UserButton } from "@clerk/nextjs";
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface SidebarLeftProps {
   docMode: DocMode;
@@ -21,7 +22,9 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({ docMode, setDocMode, o
           <div className="w-6 h-6 rounded bg-linear-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
               <Layers size={14} className="text-white" />
           </div>
-          <span className="font-bold tracking-tight text-sm">Krasis</span>
+          <Link href="/">
+            <span className="font-bold tracking-tight text-sm">Krasis</span>
+          </Link>
         </div>
       </div>
 
