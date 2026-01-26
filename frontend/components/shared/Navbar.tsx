@@ -1,6 +1,7 @@
 'use client';
 import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs';
 import { Github, Layers } from 'lucide-react'
+import Link from 'next/link';
 
 export default function Navbar() {
     return (
@@ -40,6 +41,11 @@ export default function Navbar() {
                         </SignUpButton>
                     </SignedOut>
                     <SignedIn>
+                        <Link href="/chat">
+                            <button className="bg-white text-black px-4 py-2 rounded-full text-sm font-semibold hover:bg-zinc-200 transition-colors cursor-pointer">
+                                Chat now 
+                            </button>
+                        </Link>
                         <UserButton />
                     </SignedIn>
                 </div>
