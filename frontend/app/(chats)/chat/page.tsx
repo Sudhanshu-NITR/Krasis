@@ -17,6 +17,10 @@ export default function Chat() {
     const [isLoading, setIsLoading] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
 
+    // Sidebar States
+    const [isLeftOpen, setIsLeftOpen] = useState(true);
+    const [isRightOpen, setIsRightOpen] = useState(true);
+
     const activeMode = MOCK_MODES[docMode];
 
     const handleSendMessage = async (textOverride?: string) => {
@@ -63,7 +67,6 @@ export default function Chat() {
                 if (done) break;
 
                 const chunk = decoder.decode(value, { stream: true });
-                // Split by double newline as per SSE standard
                 const lines = chunk.split('\n\n');
 
                 for (const line of lines) {
@@ -74,10 +77,9 @@ export default function Chat() {
 
                             const data = JSON.parse(jsonStr);
 
-                            // Handle Text Token
                             if (data.token) {
                                 if (isFirstToken) {
-                                    setIsLoading(false); // Stop loading spinner once text starts
+                                    setIsLoading(false);
                                     isFirstToken = false;
                                 }
 
@@ -88,7 +90,6 @@ export default function Chat() {
                                 ));
                             }
 
-                            // Handle Sources (received at end of stream)
                             if (data.sources) {
                                 setMessages(prev => prev.map(msg =>
                                     msg.id === aiMsgId
@@ -115,11 +116,24 @@ export default function Chat() {
     };
 
     return (
-        <div className="flex h-screen bg-[#09090b] text-zinc-100 font-sans overflow-hidden selection:bg-white/20">
-            <SidebarLeft docMode={docMode} setDocMode={setDocMode} onModeSwitch={() => setMessages([])} />
+        <div className="h-screen flex bg-[#09090b] text-zinc-100 font-sans overflow-hidden selection:bg-white/20">
 
-            <main className="flex-1 flex flex-col relative min-w-0">
-                <ChatHeader activeMode={activeMode} />
+            {/* Left Sidebar Wrapper */}
+            <div className={`transition-all duration-300 ease-in-out border-zinc-800 flex-shrink-0 relative ${isLeftOpen ? 'w-64' : 'w-0 border-none'}`}>
+                <div className="w-64 h-full">
+                    <SidebarLeft docMode={docMode} setDocMode={setDocMode} onModeSwitch={() => setMessages([])} />
+                </div>
+            </div>
+
+            {/* Main Content */}
+            <main className="flex-1 flex flex-col relative h-full min-w-0 bg-[#09090b]">
+                <ChatHeader
+                    activeMode={activeMode}
+                    isLeftOpen={isLeftOpen}
+                    toggleLeft={() => setIsLeftOpen(!isLeftOpen)}
+                    isRightOpen={isRightOpen}
+                    toggleRight={() => setIsRightOpen(!isRightOpen)}
+                />
 
                 <MessageList
                     messages={messages}
@@ -137,7 +151,13 @@ export default function Chat() {
                 />
             </main>
 
-            <SidebarRight activeMode={activeMode} />
+            {/* Right Sidebar Wrapper */}
+            <div className={`transition-all duration-300 ease-in-out border-zinc-800 flex-shrink-0 relative hidden xl:block ${isRightOpen ? 'w-72' : 'w-0 border-none'}`}>
+                <div className="w-72 h-full">
+                    <SidebarRight activeMode={activeMode} />
+                </div>
+            </div>
+
         </div>
     );
 }

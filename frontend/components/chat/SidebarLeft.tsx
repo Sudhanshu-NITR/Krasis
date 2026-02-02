@@ -15,7 +15,7 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({ docMode, setDocMode, o
   const { openUserProfile, user } = useClerk();
 
   return (
-    <aside className="w-64 flex flex-col border-r border-white/5 bg-black/20 backdrop-blur-xl">
+    <aside className="w-64 flex flex-col border-r border-white/5 bg-black/20 backdrop-blur-xl h-full">
       {/* Brand */}
       <div className="p-4 h-16 flex items-center border-b border-white/5 bg-white/[0.02]">
         <div className="flex items-center gap-3 text-zinc-100">

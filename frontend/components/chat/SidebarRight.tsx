@@ -8,7 +8,7 @@ interface SidebarRightProps {
 
 export const SidebarRight: React.FC<SidebarRightProps> = ({ activeMode }) => {
    return (
-      <aside className="hidden xl:flex w-72 flex-col border-l border-white/5 bg-black/20 backdrop-blur-xl">
+      <aside className="w-72 flex flex-col border-l border-white/5 bg-black/20 backdrop-blur-xl h-full">
          <div className="p-6 border-b border-white/5 bg-white/[0.02]">
             <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3">Active Context</h3>
             <div className="flex items-center gap-3 mt-1 p-3 rounded-xl bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/5 shadow-inner">
