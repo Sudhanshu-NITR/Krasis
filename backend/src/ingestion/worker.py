@@ -11,7 +11,7 @@ from src.ingestion.splitter import MarkdownDocsSplitter
 from src.store.vector_store import PineconeVectorStore
 
 QUEUE_POLL_SECONDS = 2
-RATE_LIMIT_SECONDS = 1 
+RATE_LIMIT_SECONDS = 5  # increased to avoid hitting Gemini Free Tier (100 RPM) 
 
 def run_worker(source_name: str = "langchain"):
     print(f"[worker] starting for source: {source_name}...")

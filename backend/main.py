@@ -18,7 +18,6 @@ def run_worker_thread():
 
 if __name__ == "__main__":
     # Create threads for all services (API, Scheduler, Worker)
-    print("Hi")
     api_thread = threading.Thread(target=run_api, daemon=True)
     scheduler_thread = threading.Thread(target=run_scheduler_thread, daemon=True)
     worker_thread = threading.Thread(target=run_worker_thread, daemon=True)

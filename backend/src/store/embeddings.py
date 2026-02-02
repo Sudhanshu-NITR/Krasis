@@ -17,7 +17,6 @@ class GeminiEmbeddingClient:
             model: embedding model name, e.g. "models/gemini-embedding-001"
             api_key: your Google API key for Gemini
         """
-        
         self.embeddings = GoogleGenerativeAIEmbeddings(
             model=model,
             google_api_key=api_key,
