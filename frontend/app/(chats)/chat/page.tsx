@@ -9,7 +9,7 @@ import { ChatHeader } from '@/components/chat/ChatHeader';
 import { MessageList } from '@/components/chat/MessageList';
 import { InputArea } from '@/components/chat/InputArea';
 
-const API_URL = process.env.NEXT_BACKEND_API_URL || '';
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 export default function Chat() {
     const [docMode, setDocMode] = useState<DocMode>('langchain');
