@@ -1,7 +1,7 @@
 import os
 from langchain_google_genai import ChatGoogleGenerativeAI, HarmBlockThreshold, HarmCategory
 from config.settings import (
-    GOOGLE_API_KEY, 
+    GOOGLE_API_KEY_GENERATIVE, 
     CHAT_MODEL_NAME
 )
 
@@ -11,13 +11,13 @@ def get_google_genai_llm(model: str = CHAT_MODEL_NAME, temperature: float = 0.2)
     technical documentation and code generation.
     """
 
-    if not GOOGLE_API_KEY:
-        raise ValueError("GOOGLE_API_KEY not found in environment variables.")
+    if not GOOGLE_API_KEY_GENERATIVE:
+        raise ValueError("GOOGLE_API_KEY_GENERATIVE not found in environment variables.")
     
     model = ChatGoogleGenerativeAI(
         model = model,
         temperature=temperature,
-        api_key=GOOGLE_API_KEY,
+        api_key=GOOGLE_API_KEY_GENERATIVE,
         streaming=True,
         # Safety settings are crucial for code-related tasks to prevent 
         # false positives in blocking technical snippets.

@@ -1,7 +1,7 @@
 requests
 schedule
 beautifulsoup4
-dotenv
+python-dotenv
 
 lxml
 
@@ -9,7 +9,6 @@ langchain-text-splitters
 langchain
 langchain-community
 langchain-core
-langchain-classic
 
 google-generativeai
 langchain-google-genai
