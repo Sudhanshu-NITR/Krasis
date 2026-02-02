@@ -6,6 +6,8 @@ import uvicorn
 from src.core.chat import assistant
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.ingestion.sqlite_queue import SQLiteQueue
+
 app = FastAPI(title="Krasis Intelligen Docs API")
 
 app.add_middleware(
@@ -17,10 +19,19 @@ app.add_middleware(
 
 class ChatRequest(BaseModel):
     query: str
+    doc_mode: str = "default"
 
 @app.get("/health")
 async def health_check():
     return {"status": "online", "model": "gemini-2.5-flash"}
+
+@app.get("/queue/status")
+async def get_queue_status():
+    """
+    Returns the current counts of the ingestion queue by status.
+    """
+    queue = SQLiteQueue()
+    return queue.get_stats()
 
 @app.post("/ask")
 async def ask_docs(request: ChatRequest):

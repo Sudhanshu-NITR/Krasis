@@ -12,7 +12,11 @@ class SQLiteQueue:
 
         self.db_path = db_path
         self.table = table
-        self.conn = sqlite3.connect(self.db_path, timeout=30, isolation_level=None)
+        self.conn = sqlite3.connect(
+            self.db_path, 
+            timeout=30, 
+            isolation_level=None
+        )
         self.conn.execute("PRAGMA journal_mode=WAL;")
         self.conn.row_factory = sqlite3.Row
         self._init_table()
@@ -121,12 +125,21 @@ class SQLiteQueue:
         self.conn.commit()
 
     def requeue_front(self, id: int):
-        # bump priority and set next_try_at to now
+        # bump priority, reset attempts, set status to pending, and set next_try_at to now
         now = time.time()
-        self.conn.execute(f"UPDATE {self.table} SET priority = priority + 10, next_try_at = ? WHERE id = ?", (now, id))
+        self.conn.execute(
+            f"UPDATE {self.table} SET status='pending', priority = priority + 10, attempts=0, processing_started_at=NULL, next_try_at = ? WHERE id = ?", 
+            (now, id)
+        )
         self.conn.commit()
 
     def count_pending(self) -> int:
         now = time.time()
         row = self.conn.execute(f"SELECT COUNT(1) as c FROM {self.table} WHERE status = 'pending' AND next_try_at <= ?", (now,)).fetchone()
         return row["c"]
+
+    def get_stats(self) -> Dict[str, int]:
+        sql = f"SELECT status, COUNT(*) as c FROM {self.table} GROUP BY status"
+        rows = self.conn.execute(sql).fetchall()
+        stats = {row["status"]: row["c"] for row in rows}
+        return stats

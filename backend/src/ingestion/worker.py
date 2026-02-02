@@ -7,11 +7,11 @@ from config.settings import STATE_DB_PATH
 QUEUE_POLL_SECONDS = 2  # base polling interval
 RATE_LIMIT_SECONDS = 1  # naive per-embed delay; make configurable
 
-queue = SQLiteQueue(db_path=STATE_DB_PATH, table="ingestion_queue")
-state = SitemapState(db_path=STATE_DB_PATH, table="langchain_sitemap_urls")
-
 def run_worker():
     print("[worker] starting...")
+    queue = SQLiteQueue(db_path=STATE_DB_PATH, table="ingestion_queue")
+    state = SitemapState(db_path=STATE_DB_PATH, table="langchain_sitemap_urls")
+    
     while True:
         item = queue.dequeue()
         if not item:
@@ -31,9 +31,16 @@ def run_worker():
         except Exception as e:
             err = str(e)
             print(f"[worker] error for {url}: {err}")
-            # TODO: If it's a quota error you may want to requeue_front
-            # For general errors use exponential backoff:
-            queue.ack_failure(item_id, err)
+            
+            if "429" in err or "RESOURCE_EXHAUSTED" in err:
+                print(f"\n[worker] Hit rate limit/quota. Sleeping for 1 hour before next attempt...")
+                # Requeue this item to the front so it's tried first after waking up
+                queue.requeue_front(item_id)
+                # Sleep for 1 hour
+                time.sleep(3600)
+            else:
+                # For general errors use exponential backoff:
+                queue.ack_failure(item_id, err)
 
 
 if __name__ == "__main__":
