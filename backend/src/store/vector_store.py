@@ -2,7 +2,7 @@ from typing import List
 
 from pinecone.grpc import PineconeGRPC as Pinecone
 from pinecone import ServerlessSpec
-from langchain_classic.schema import Document
+from langchain_core.documents import Document
 from src.store.embeddings import GeminiEmbeddingClient
 from langchain_community.retrievers import PineconeHybridSearchRetriever
 from pinecone_text.sparse import BM25Encoder
@@ -39,7 +39,23 @@ class PineconeVectorStore:
         self.index = self.pc.Index(name=PINECONE_INDEX_NAME)
 
         self.embeddings = GeminiEmbeddingClient()
-        self.bm25_encoder = BM25Encoder().default()
+        
+        # Cache BM25 encoder to avoid re-downloading default corpus on every restart
+        import os
+        bm25_file = "data/bm25_values.json"
+        
+        # Ensure data directory exists
+        os.makedirs(os.path.dirname(bm25_file), exist_ok=True)
+
+        self.bm25_encoder = BM25Encoder()
+        if os.path.exists(bm25_file):
+            print(f"[*] Loading BM25 encoder from {bm25_file}...")
+            self.bm25_encoder.load(bm25_file)
+        else:
+            print("[*] Downloading default BM25 encoder (this may take a while)...")
+            self.bm25_encoder = self.bm25_encoder.default()
+            self.bm25_encoder.dump(bm25_file)
+            print(f"[*] BM25 encoder saved to {bm25_file}")
 
     
     def delete_by_source_url(self, source_url: str):

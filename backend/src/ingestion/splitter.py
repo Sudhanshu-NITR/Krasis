@@ -1,13 +1,13 @@
 import re
 from typing import List
-from langchain_classic.schema import Document
+from langchain_core.documents import Document
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 
 
 CODE_BLOCK_PATTERN = re.compile(r"```[\s\S]*?```", re.MULTILINE)
 
 
-class CodeAwareMarkdownSplitter:
+class MarkdownDocsSplitter:
     HEADERS_TO_SPLIT_ON = [
         ("#", "h1"),
         ("##", "h2"),

@@ -11,7 +11,7 @@ TIMEOUT = 10
 
 class MarkdownLoader:
     """
-    Fetches mardown (Can be used for documentation of LangChain, Stripe, etc.)
+    Fetches markdown (Can be used for documentation of LangChain, Stripe, etc.)
     """
 
     def load(self, url: str) -> Optional[Dict]:
@@ -36,7 +36,7 @@ class MarkdownLoader:
             "source_type": "markdown",
             "fetched_at": time.time(),
         }
-    
+
     @staticmethod
     def _to_markdown_url(url: str) -> str:
         return url.rstrip("/") + ".md"
@@ -55,12 +55,13 @@ class MarkdownLoader:
         """
         if "***" in md:
             return md.split("***", 1)[0].strip()
+        # Fallback for other documentations or if separator is not found
         return md.strip()
 
 if __name__ == "__main__": 
     loader = MarkdownLoader() 
     test_url = "https://docs.langchain.com/oss/python/integrations/document_loaders" 
-    data = loader.load(test_url) 
-    if data: 
+    data = loader.load(test_url)
+    if data:
         # print(f"\nSuccessfully loaded {len(data['content'])} chars from {data['source']}") 
         print(data['content'])  

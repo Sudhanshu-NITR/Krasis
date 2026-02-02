@@ -2,23 +2,15 @@ import schedule
 import time
 from config.settings import SITEMAP_URL, CHECK_INTERVAL_HOURS
 from src.ingestion.monitor import SitemapMonitor
-from src.ingestion.queue_manager import IngestionQueue
+from src.ingestion.sqlite_queue import SQLiteQueue
 
 def run_ingestion_cycle():
     print(f"[*] Starting ingestion cycle...")
     monitor = SitemapMonitor(SITEMAP_URL)
 
-    queue = IngestionQueue()
-
-    # 1. Check for changes
-    new_urls = monitor.fetch_and_diff()
-
-    # 2. Process
-    if new_urls:
-        queue.add(new_urls)
-        queue.process()
-    else:
-        print("[*] No changes found.")
+    # 1. Check for changes (this populates the queue)
+    monitor.fetch_and_diff()
+    print("[*] Ingestion cycle complete. Tasks enqueued (if any).")
 
 def start_scheduler():
     # TODO: for development run once immidiately, change for production
