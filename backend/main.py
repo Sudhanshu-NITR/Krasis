@@ -1,3 +1,4 @@
+import os
 import threading
 import uvicorn
 from src.orchestration.scheduler import start_scheduler
@@ -5,8 +6,9 @@ from src.ingestion.worker import run_worker
 from api.api import app
 
 def run_api():
-    print("[*] Starting API Server at http://0.0.0.0:8000")
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    port = int(os.environ.get("PORT", 8000))
+    print(f"[*] Starting API Server at http://0.0.0.0:{port}")
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
 
 def run_scheduler_thread():
     print("[*] Starting Scheduler...")
