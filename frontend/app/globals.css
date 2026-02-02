@@ -1,44 +1,50 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-indigo: #6366f1;
+  --color-brand-purple: #a855f7;
+  --color-glass-border: rgba(255, 255, 255, 0.08);
+  --color-glass-bg: rgba(0, 0, 0, 0.3);
+}
+
+@layer base {
+
+  :root {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+  }
+
+  body {
+    background-color: #050505;
+    background-image:
+      radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
+    background-attachment: fixed;
+    color: var(--foreground);
+    @apply antialiased;
+  }
+}
+
 @layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
 
-    /* 1. The Main Scrollbar Track */
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
-        /* Width of vertical scrollbar */
-        height: 6px;
-        /* Height of horizontal scrollbar */
-    }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-    /* 2. The Background (Track) */
-    .custom-scrollbar::-webkit-scrollbar-track {
-        background: transparent;
-        /* transparent so it blends with the dark bg */
-    }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 100vh;
+  }
 
-    /* 3. The Handle (Thumb) */
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.1);
-        /* Subtle white-ish gray */
-        border-radius: 100vh;
-        /* Fully rounded pills */
-    }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
 
-    /* 4. Handle on Hover */
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.2);
-        /* Slightly brighter on hover */
-    }
-
-    /* Optional: Hide scrollbar for specific areas like the Input box if needed */
-    .scrollbar-hide::-webkit-scrollbar {
-        display: none;
-    }
-
-    .scrollbar-hide {
-        -ms-overflow-style: none;
-        /* IE and Edge */
-        scrollbar-width: none;
-        /* Firefox */
-    }
+  .glass-panel {
+    @apply bg-black/40 backdrop-blur-xl border border-white/10;
+  }
 }

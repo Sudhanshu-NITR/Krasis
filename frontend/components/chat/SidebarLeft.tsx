@@ -2,8 +2,7 @@ import React from 'react';
 import { Sparkles, Settings, Layers } from 'lucide-react';
 import { DocMode } from '@/types/types';
 import { MOCK_MODES } from '@/config/config';
-import { useClerk, UserButton } from "@clerk/nextjs";
-import Image from 'next/image';
+import { useClerk } from "@clerk/nextjs";
 import Link from 'next/link';
 
 interface SidebarLeftProps {
@@ -14,25 +13,28 @@ interface SidebarLeftProps {
 
 export const SidebarLeft: React.FC<SidebarLeftProps> = ({ docMode, setDocMode, onModeSwitch }) => {
   const { openUserProfile, user } = useClerk();
+
   return (
-    <aside className="w-64 flex flex-col border-r border-white/5 bg-[#09090b]">
+    <aside className="w-64 flex flex-col border-r border-white/5 bg-black/20 backdrop-blur-xl">
       {/* Brand */}
-      <div className="p-4 h-14 flex items-center border-b border-white/5">
-        <div className="flex items-center gap-2 text-zinc-100">
-          <div className="w-6 h-6 rounded bg-linear-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <Layers size={14} className="text-white" />
+      <div className="p-4 h-16 flex items-center border-b border-white/5 bg-white/[0.02]">
+        <div className="flex items-center gap-3 text-zinc-100">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 ring-1 ring-white/10">
+            <Layers size={16} className="text-white" />
           </div>
           <Link href="/">
-            <span className="font-bold tracking-tight text-sm">Krasis</span>
+            <span className="font-bold tracking-tight text-base bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400">
+              Krasis
+            </span>
           </Link>
         </div>
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 space-y-8 custom-scrollbar">
         <div>
-          <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-2 mb-2">Documentation</div>
-          <nav className="space-y-0.5">
+          <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-3 mb-3">Documentation</div>
+          <nav className="space-y-1">
             {(Object.keys(MOCK_MODES) as DocMode[]).map((mode) => {
               const m = MOCK_MODES[mode];
               const isActive = docMode === mode;
@@ -40,14 +42,19 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({ docMode, setDocMode, o
                 <button
                   key={mode}
                   onClick={() => { setDocMode(mode); onModeSwitch(); }}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 group
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-300 group relative overflow-hidden
                     ${isActive
-                      ? 'bg-zinc-800 text-white shadow-inner font-medium'
+                      ? 'text-white font-medium bg-white/5 shadow-inner ring-1 ring-white/5'
                       : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'}`}
                 >
-                  <m.icon size={16} className={`${isActive ? m.color : 'text-zinc-500 group-hover:text-zinc-400'}`} />
-                  <span>{m.name}</span>
-                  {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.5)]" />}
+                  <div className={`absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-transparent opacity-0 transition-opacity duration-300 ${isActive ? 'opacity-100' : 'group-hover:opacity-50'}`} />
+
+                  <m.icon size={18} className={`relative z-10 transition-colors duration-300 ${isActive ? m.color : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                  <span className="relative z-10">{m.name}</span>
+
+                  {isActive && (
+                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)] relative z-10" />
+                  )}
                 </button>
               );
             })}
@@ -55,33 +62,36 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({ docMode, setDocMode, o
         </div>
 
         <div>
-          <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-2 mb-2">Your Library</div>
-          <div className="px-2 py-1 text-sm text-zinc-600 italic">No saved threads yet</div>
+          <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-3 mb-3">Your Library</div>
+          <div className="px-3 py-4 rounded-lg border border-dashed border-white/5 bg-white/[0.01] text-center">
+            <span className="text-xs text-zinc-600 italic">No saved threads yet</span>
+          </div>
         </div>
       </div>
 
       {/* User Footer */}
-      <button onClick={() => openUserProfile()}>
-        <div className="p-4 border-t border-white/5">
-          <div className="flex items-center gap-3 px-2 py-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer text-zinc-400 hover:text-zinc-200">
-            {/* <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-zinc-700 to-zinc-600 flex items-center justify-center text-xs font-medium text-white shadow-lg">
-              <Image src={user?.imageUrl || ''} alt="User Avatar" width={32} height={32} className="rounded-full" />
-              JS
-            </div> */}
-            <img 
-              src={user?.imageUrl} 
-              alt="User Profile" 
-              className="w-8 h-8 rounded-full bg-linear-to-tr from-zinc-700 to-zinc-600 flex items-center justify-center text-xs font-medium text-white shadow-lg"
-            />
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium truncate">{user?.fullName}</div>
-              <div className="text-[10px] text-zinc-500">{user?.emailAddresses?.[0]?.emailAddress}</div>
+      <div className="p-4 border-t border-white/5 bg-white/[0.02]">
+        <button
+          onClick={() => openUserProfile()}
+          className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-all duration-200 group border border-transparent hover:border-white/5 text-left"
+        >
+          <img
+            src={user?.imageUrl}
+            alt="User Profile"
+            className="w-9 h-9 rounded-full ring-2 ring-white/5 shadow-lg group-hover:scale-105 transition-transform duration-200"
+          />
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-semibold text-zinc-200 truncate group-hover:text-white transition-colors">
+              {user?.fullName}
             </div>
-            
-            <Settings className='ml-2' size={14} />
+            <div className="text-[10px] text-zinc-500 truncate group-hover:text-zinc-400 transition-colors">
+              {user?.emailAddresses?.[0]?.emailAddress}
+            </div>
           </div>
-        </div>
-      </button>
+
+          <Settings className="text-zinc-600 group-hover:text-zinc-300 transition-colors" size={16} />
+        </button>
+      </div>
     </aside>
   );
 };

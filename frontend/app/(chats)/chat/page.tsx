@@ -9,10 +9,10 @@ import { ChatHeader } from '@/components/chat/ChatHeader';
 import { MessageList } from '@/components/chat/MessageList';
 import { InputArea } from '@/components/chat/InputArea';
 
-const API_URL = "http://localhost:8000/ask/stream"; 
+const API_URL = "http://localhost:8000/ask/stream";
 
 export default function Chat() {
-    const [docMode, setDocMode] = useState<DocMode>('stripe');
+    const [docMode, setDocMode] = useState<DocMode>('langchain');
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -71,7 +71,7 @@ export default function Chat() {
                         try {
                             const jsonStr = line.slice(6);
                             if (!jsonStr) continue;
-                            
+
                             const data = JSON.parse(jsonStr);
 
                             // Handle Text Token
@@ -81,8 +81,8 @@ export default function Chat() {
                                     isFirstToken = false;
                                 }
 
-                                setMessages(prev => prev.map(msg => 
-                                    msg.id === aiMsgId 
+                                setMessages(prev => prev.map(msg =>
+                                    msg.id === aiMsgId
                                         ? { ...msg, content: msg.content + data.token }
                                         : msg
                                 ));
@@ -90,8 +90,8 @@ export default function Chat() {
 
                             // Handle Sources (received at end of stream)
                             if (data.sources) {
-                                setMessages(prev => prev.map(msg => 
-                                    msg.id === aiMsgId 
+                                setMessages(prev => prev.map(msg =>
+                                    msg.id === aiMsgId
                                         ? { ...msg, sources: data.sources }
                                         : msg
                                 ));
@@ -104,8 +104,8 @@ export default function Chat() {
             }
         } catch (error) {
             console.error("Streaming error:", error);
-            setMessages(prev => prev.map(msg => 
-                msg.id === aiMsgId 
+            setMessages(prev => prev.map(msg =>
+                msg.id === aiMsgId
                     ? { ...msg, content: msg.content + "\n\n**Error:** Failed to connect to the documentation server." }
                     : msg
             ));
@@ -117,17 +117,17 @@ export default function Chat() {
     return (
         <div className="flex h-screen bg-[#09090b] text-zinc-100 font-sans overflow-hidden selection:bg-white/20">
             <SidebarLeft docMode={docMode} setDocMode={setDocMode} onModeSwitch={() => setMessages([])} />
-            
+
             <main className="flex-1 flex flex-col relative min-w-0">
                 <ChatHeader activeMode={activeMode} />
-                
+
                 <MessageList
                     messages={messages}
                     isLoading={isLoading}
                     activeMode={activeMode}
                     onSuggestionClick={handleSendMessage}
                 />
-                
+
                 <InputArea
                     input={input}
                     setInput={setInput}
@@ -136,7 +136,7 @@ export default function Chat() {
                     docMode={docMode}
                 />
             </main>
-            
+
             <SidebarRight activeMode={activeMode} />
         </div>
     );
