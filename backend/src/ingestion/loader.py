@@ -11,7 +11,8 @@ TIMEOUT = 10
 
 class MarkdownLoader:
     """
-    Fetches markdown (Can be used for documentation of LangChain, Stripe, etc.)
+    Fetches markdown documentation.
+    Designed for sites that serve raw markdown via .md extension (e.g. LangChain, Stripe).
     """
 
     def load(self, url: str) -> Optional[Dict]:
@@ -39,6 +40,7 @@ class MarkdownLoader:
 
     @staticmethod
     def _to_markdown_url(url: str) -> str:
+        # Assumes /foo/bar -> /foo/bar.md strategy works for both
         return url.rstrip("/") + ".md"
 
     @staticmethod
@@ -47,15 +49,13 @@ class MarkdownLoader:
     
     @staticmethod
     def strip_after_footer(md: str) -> str:
-        # TODO: This might create problem for documentations other than LangChain
-
         """
-        Removes everything after the first '***' divider.
-        LangChain-docs specific cleanup.
+        Removes footer content.
+        Currently checks for LangChain's '***' divider. 
+        TODO: Make this configurable per source if Stripe uses different unexpected footers.
         """
         if "***" in md:
             return md.split("***", 1)[0].strip()
-        # Fallback for other documentations or if separator is not found
         return md.strip()
 
 if __name__ == "__main__": 
