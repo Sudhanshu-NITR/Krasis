@@ -1,12 +1,4 @@
-from src.ingestion.loader import MarkdownLoader
-from src.ingestion.splitter import MarkdownDocsSplitter
-from src.store.vector_store import PineconeVectorStore
-
-loader = MarkdownLoader()
-splitter = MarkdownDocsSplitter()
-store = PineconeVectorStore()
-
-def process_url(url: str):    
+def process_url(url: str, loader, splitter, store):    
     raw = loader.load(url)
     if not raw:
         return 

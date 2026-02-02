@@ -2,7 +2,6 @@ import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
-from config.settings import STATE_DB_PATH
 from src.ingestion.sitemap_state import SitemapState
 from src.ingestion.sqlite_queue import SQLiteQueue
 
@@ -13,16 +12,16 @@ class SitemapMonitor:
     into the persistent ingestion queue.
     """
 
-    def __init__(self, sitemap_url: str):
+    def __init__(self, sitemap_url: str, db_path: str):
         self.sitemap_url = sitemap_url
 
         self.state = SitemapState(
-            db_path=STATE_DB_PATH,
-            table="langchain_sitemap_urls"
+            db_path=db_path,
+            table="sitemap_urls" # Use generic name since DB is per-source
         )
 
         self.queue = SQLiteQueue(
-            db_path=STATE_DB_PATH,
+            db_path=db_path,
             table="ingestion_queue"
         )
 

@@ -1,17 +1,42 @@
 import time
+import argparse
 from src.ingestion.sqlite_queue import SQLiteQueue
-from src.ingestion.pipeline import process_url  # reuse existing processing code
+from src.ingestion.pipeline import process_url
 from src.ingestion.sitemap_state import SitemapState
-from config.settings import STATE_DB_PATH
+from config.settings import get_config, PINECONE_INDEX_NAME
 
-QUEUE_POLL_SECONDS = 2  # base polling interval
-RATE_LIMIT_SECONDS = 1  # naive per-embed delay; make configurable
+# Loaders
+from src.ingestion.loader import MarkdownLoader
+from src.ingestion.splitter import MarkdownDocsSplitter
+from src.store.vector_store import PineconeVectorStore
 
-def run_worker():
-    print("[worker] starting...")
-    queue = SQLiteQueue(db_path=STATE_DB_PATH, table="ingestion_queue")
-    state = SitemapState(db_path=STATE_DB_PATH, table="langchain_sitemap_urls")
+QUEUE_POLL_SECONDS = 2
+RATE_LIMIT_SECONDS = 1 
+
+def run_worker(source_name: str = "langchain"):
+    print(f"[worker] starting for source: {source_name}...")
     
+    try:
+        cfg = get_config(source_name)
+    except ValueError as e:
+        print(f"[worker] Error loading config: {e}")
+        return
+
+    # 1. Instantiate Dependencies
+    # Use generic MarkdownLoader for both LangChain and Stripe
+    loader = MarkdownLoader()
+    
+    splitter = MarkdownDocsSplitter()
+    
+    store = PineconeVectorStore(
+        index_name=PINECONE_INDEX_NAME,
+        namespace=cfg.pinecone_namespace
+    )
+
+    # 2. Instantiate State Managers with source-specific DB
+    queue = SQLiteQueue(db_path=cfg.state_db_path, table="ingestion_queue")
+    state = SitemapState(db_path=cfg.state_db_path, table="sitemap_urls")
+
     while True:
         item = queue.dequeue()
         if not item:
@@ -23,7 +48,9 @@ def run_worker():
         print(f"[worker] processing {url} (id={item_id})")
 
         try:
-            process_url(url)  # this upserts into vector store
+            # Pass dependencies to pipeline
+            process_url(url, loader, splitter, store)
+            
             queue.ack_success(item_id)
             state.mark_ingested(url)
             # TODO: apply rate limit / quota accounting here
@@ -34,14 +61,16 @@ def run_worker():
             
             if "429" in err or "RESOURCE_EXHAUSTED" in err:
                 print(f"\n[worker] Hit rate limit/quota. Sleeping for 1 hour before next attempt...")
-                # Requeue this item to the front so it's tried first after waking up
                 queue.requeue_front(item_id)
-                # Sleep for 1 hour
                 time.sleep(3600)
             else:
-                # For general errors use exponential backoff:
                 queue.ack_failure(item_id, err)
 
 
 if __name__ == "__main__":
-    run_worker()
+    # Allow running manually with a specific source
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--source", default="langchain", help="Source name (e.g., langchain, stripe)")
+    args = parser.parse_args()
+    
+    run_worker(args.source)
