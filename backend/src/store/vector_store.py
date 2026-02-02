@@ -9,9 +9,9 @@ from pinecone_text.sparse import BM25Encoder
 
 from config.settings import (
     PINECONE_API_KEY,
-    PINECONE_INDEX_NAME,
+    PINECONE_INDEX_NAME as DEFAULT_INDEX_NAME, # Rename for clarity
     EMBEDDING_DIM,
-    PINECONE_NAMESPACE, 
+    PINECONE_NAMESPACE as DEFAULT_NAMESPACE, # Rename for clarity
 )
 
 class PineconeVectorStore:
@@ -22,12 +22,14 @@ class PineconeVectorStore:
     - exposes LangChain hybrid retriever
     """
 
-    def __init__(self):
+    def __init__(self, index_name: str = DEFAULT_INDEX_NAME, namespace: str = DEFAULT_NAMESPACE):
         self.pc = Pinecone(api_key=PINECONE_API_KEY)
+        self.index_name = index_name
+        self.namespace = namespace
 
-        if PINECONE_INDEX_NAME not in self.pc.list_indexes().names():
+        if self.index_name not in self.pc.list_indexes().names():
             self.pc.create_index(
-                name=PINECONE_INDEX_NAME,
+                name=self.index_name,
                 dimension=EMBEDDING_DIM,
                 metric="dotproduct",
                 spec=ServerlessSpec(
@@ -36,7 +38,7 @@ class PineconeVectorStore:
                 ),
             )
 
-        self.index = self.pc.Index(name=PINECONE_INDEX_NAME)
+        self.index = self.pc.Index(name=self.index_name)
 
         self.embeddings = GeminiEmbeddingClient()
         
@@ -62,7 +64,7 @@ class PineconeVectorStore:
         try:
             self.index.delete(
                 filter={"source_url": {"$eq": source_url}},
-                namespace=PINECONE_NAMESPACE,
+                namespace=self.namespace,
             )
         except Exception as e:
             # First-time namespace creation case → safe to ignore
@@ -87,13 +89,13 @@ class PineconeVectorStore:
                 "metadata": metadata,
             })
 
-        self.index.upsert(vectors=vectors, namespace=PINECONE_NAMESPACE)
+        self.index.upsert(vectors=vectors, namespace=self.namespace)
 
     def get_hybrid_retriever(self, top_k: int = 5) -> PineconeHybridSearchRetriever:
         return PineconeHybridSearchRetriever(
             embeddings=self.embeddings.embeddings,
             sparse_encoder=self.bm25_encoder,
             index=self.index,
-            namespace=PINECONE_NAMESPACE,
+            namespace=self.namespace,
             top_k=top_k,
         )
