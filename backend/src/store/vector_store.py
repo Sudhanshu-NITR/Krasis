@@ -1,4 +1,6 @@
-from typing import List
+from typing import List, Optional, Dict
+import os
+import time
 
 from pinecone.grpc import PineconeGRPC as Pinecone
 from pinecone import ServerlessSpec
@@ -39,11 +41,9 @@ class PineconeVectorStore:
             )
 
         self.index = self.pc.Index(name=self.index_name)
-
         self.embeddings = GeminiEmbeddingClient()
         
         # Cache BM25 encoder to avoid re-downloading default corpus on every restart
-        import os
         bm25_file = "data/bm25_values.json"
         
         # Ensure data directory exists
@@ -59,7 +59,6 @@ class PineconeVectorStore:
             self.bm25_encoder.dump(bm25_file)
             print(f"[*] BM25 encoder saved to {bm25_file}")
 
-    
     def delete_by_source_url(self, source_url: str):
         try:
             self.index.delete(
@@ -71,16 +70,51 @@ class PineconeVectorStore:
             if "Namespace not found" not in str(e):
                 raise
 
+    def get_document_last_ingested(self, source_url: str) -> Optional[float]:
+        """
+        Check if a document exists by fetching 1 vector with the source_url filter.
+        Returns the 'last_ingested_at' timestamp from metadata if found, else None.
+        """
+        try:
+            # We generate a dummy vector of 0s to query because Pinecone doesn't support metadata-only queries efficiently
+            # without a vector. However, a better way for just checking existence is `query` with top_k=1
+            # and a filter.
+            
+            dummy_vector = [0.0] * EMBEDDING_DIM
+            
+            result = self.index.query(
+                vector=dummy_vector,
+                top_k=1,
+                filter={"source_url": {"$eq": source_url}},
+                namespace=self.namespace,
+                include_metadata=True
+            )
+            
+            if result.matches:
+                metadata = result.matches[0].metadata
+                # Check for ingested timestamp in metadata (we need to ensure we save this during upsert!)
+                return metadata.get("ingested_at")
+            
+            return None
+            
+        except Exception:
+            # If namespace doesn't exist or other error, assume not ingested
+            return None
+
     def upsert_documents(self, docs: List[Document]):
         texts = [doc.page_content for doc in docs]
         
         dense_vectors = self.embeddings.embed_documents(texts)
         sparse_vectors = self.bm25_encoder.encode_documents(texts)
 
+        # Add ingestion timestamp to all docs
+        now_ts = time.time()
+        
         vectors = []
         for i, (doc, dense, sparse) in enumerate(zip(docs, dense_vectors, sparse_vectors)):
             metadata = doc.metadata.copy()
             metadata["context"] = doc.page_content
+            metadata["ingested_at"] = now_ts # Save timestamp for future checks!
             
             vectors.append({
                 "id": f"{doc.metadata.get('doc_id', 'unknown')}::chunk_{i}",

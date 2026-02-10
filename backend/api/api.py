@@ -5,8 +5,7 @@ import json
 import uvicorn
 from src.core.chat import assistant
 from fastapi.middleware.cors import CORSMiddleware
-
-from src.ingestion.sqlite_queue import SQLiteQueue
+from src.ingestion.queue_factory import get_queue
 
 app = FastAPI(title="Krasis Intelligen Docs API")
 
@@ -30,7 +29,7 @@ async def get_queue_status():
     """
     Returns the current counts of the ingestion queue by status.
     """
-    queue = SQLiteQueue()
+    queue = get_queue()
     return queue.get_stats()
 
 @app.post("/ask")

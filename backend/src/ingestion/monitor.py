@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 from src.ingestion.sitemap_state import SitemapState
-from src.ingestion.sqlite_queue import SQLiteQueue
+from src.ingestion.queue_factory import get_queue, get_state_store
 
 
 class SitemapMonitor:
@@ -15,15 +15,9 @@ class SitemapMonitor:
     def __init__(self, sitemap_url: str, db_path: str):
         self.sitemap_url = sitemap_url
 
-        self.state = SitemapState(
-            db_path=db_path,
-            table="sitemap_urls" # Use generic name since DB is per-source
-        )
+        self.state = get_state_store(source_name="default")
 
-        self.queue = SQLiteQueue(
-            db_path=db_path,
-            table="ingestion_queue"
-        )
+        self.queue = get_queue()
 
     def fetch_and_diff(self):
         print(f"[*] Fetching sitemap from {self.sitemap_url}...")
@@ -82,5 +76,5 @@ class SitemapMonitor:
 
 
 if __name__ == "__main__":
-    loader = SitemapMonitor('https://docs.langchain.com/sitemap.xml')
+    loader = SitemapMonitor('https://docs.langchain.com/sitemap.xml', 'data/sitemap_state.db')
     loader.fetch_and_diff()

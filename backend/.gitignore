@@ -52,6 +52,7 @@ qdrant/
 state/
 data/
 cache/
+nltk_data/
 
 # =========================
 # Secrets & env files

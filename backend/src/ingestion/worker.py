@@ -1,8 +1,8 @@
+from datetime import datetime
 import time
 import argparse
-from src.ingestion.sqlite_queue import SQLiteQueue
+from src.ingestion.queue_factory import get_queue, get_state_store
 from src.ingestion.pipeline import process_url
-from src.ingestion.sitemap_state import SitemapState
 from config.settings import get_config, PINECONE_INDEX_NAME
 
 # Loaders
@@ -33,9 +33,12 @@ def run_worker(source_name: str = "langchain"):
         namespace=cfg.pinecone_namespace
     )
 
-    # 2. Instantiate State Managers with source-specific DB
-    queue = SQLiteQueue(db_path=cfg.state_db_path, table="ingestion_queue")
-    state = SitemapState(db_path=cfg.state_db_path, table="sitemap_urls")
+    # 2. Instantiate Queue (Factory handles Postgres vs SQLite)
+    queue = get_queue()
+    
+    # 3. Instantiate State Store (Factory handles Postgres vs SQLite)
+    state = get_state_store(source_name)
+
 
     while True:
         item = queue.dequeue()
@@ -48,8 +51,28 @@ def run_worker(source_name: str = "langchain"):
         print(f"[worker] processing {url} (id={item_id})")
 
         try:
-            # Pass dependencies to pipeline
-            process_url(url, loader, splitter, store)
+            # Check if Pinecone already has this URL up-to-date
+            # This handles the case where local/postgres state is wiped but Pinecone is still full
+            last_ingested_ts = store.get_document_last_ingested(url)
+            sitemap_lastmod = item.get("lastmod")
+
+            skip_processing = False
+            
+            if last_ingested_ts and sitemap_lastmod and sitemap_lastmod != "N/A":
+                try:
+                    # Parse sitemap timestamp
+                    sitemap_ts = datetime.fromisoformat(sitemap_lastmod.replace("Z", "")).timestamp()
+                    
+                    # If ingested AFTER the last modification of the proper page
+                    if last_ingested_ts >= sitemap_ts:
+                        print(f"  -> Skipping (already in Vector Store): {url}")
+                        skip_processing = True
+                except Exception:
+                    pass
+            
+            if not skip_processing:
+                # Pass dependencies to pipeline
+                process_url(url, loader, splitter, store)
             
             queue.ack_success(item_id)
             state.mark_ingested(url)
