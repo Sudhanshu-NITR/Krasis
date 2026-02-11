@@ -29,4 +29,17 @@ class DocAssistant:
                 "message": str(e)
             }
         
-assistant = DocAssistant()
+# Global singleton instance
+_assistant_instance = None
+
+def get_assistant():
+    """
+    Lazy load the DocAssistant singleton.
+    """
+    global _assistant_instance
+    if _assistant_instance is None:
+        _assistant_instance = DocAssistant()
+    return _assistant_instance
+
+# Removed global instantiation to save memory on import
+# assistant = DocAssistant()
