@@ -3,6 +3,7 @@ schedule
 psycopg2-binary
 beautifulsoup4
 python-dotenv
+protobuf>=5.29.3
 
 lxml
 
