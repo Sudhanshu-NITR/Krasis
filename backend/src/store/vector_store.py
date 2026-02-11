@@ -16,6 +16,30 @@ from config.settings import (
     PINECONE_NAMESPACE as DEFAULT_NAMESPACE, # Rename for clarity
 )
 
+# Global singleton for BM25 Encoder to save memory on 512MB instances
+_SHARED_BM25_ENCODER = None
+
+def get_shared_bm25_encoder():
+    global _SHARED_BM25_ENCODER
+    if _SHARED_BM25_ENCODER is None:
+        # Cache BM25 encoder to avoid re-downloading default corpus on every restart
+        bm25_file = "data/bm25_values.json"
+        # Ensure data directory exists
+        os.makedirs(os.path.dirname(bm25_file), exist_ok=True)
+        
+        encoder = BM25Encoder()
+        if os.path.exists(bm25_file):
+            print(f"[*] Loading BM25 encoder from {bm25_file}...")
+            encoder.load(bm25_file)
+        else:
+            print("[*] Downloading default BM25 encoder (this may take a while)...")
+            encoder = encoder.default()
+            encoder.dump(bm25_file)
+            print(f"[*] BM25 encoder saved to {bm25_file}")
+        
+        _SHARED_BM25_ENCODER = encoder
+    return _SHARED_BM25_ENCODER
+
 class PineconeVectorStore:
     """
     Unified Pinecone store:
@@ -29,6 +53,9 @@ class PineconeVectorStore:
         self.index_name = index_name
         self.namespace = namespace
 
+        # Only check/create index if we suspect it's needed (or catch errors during ops)
+        # Checking list_indexes() on every init adds startup latency
+        # But for robustness we'll keep it for now, unless it times out.
         if self.index_name not in self.pc.list_indexes().names():
             self.pc.create_index(
                 name=self.index_name,
@@ -43,21 +70,14 @@ class PineconeVectorStore:
         self.index = self.pc.Index(name=self.index_name)
         self.embeddings = GeminiEmbeddingClient()
         
-        # Cache BM25 encoder to avoid re-downloading default corpus on every restart
-        bm25_file = "data/bm25_values.json"
-        
-        # Ensure data directory exists
-        os.makedirs(os.path.dirname(bm25_file), exist_ok=True)
+        # Lazy load BM25 only when creating retriever or upserting
+        self._bm25_encoder = None
 
-        self.bm25_encoder = BM25Encoder()
-        if os.path.exists(bm25_file):
-            print(f"[*] Loading BM25 encoder from {bm25_file}...")
-            self.bm25_encoder.load(bm25_file)
-        else:
-            print("[*] Downloading default BM25 encoder (this may take a while)...")
-            self.bm25_encoder = self.bm25_encoder.default()
-            self.bm25_encoder.dump(bm25_file)
-            print(f"[*] BM25 encoder saved to {bm25_file}")
+    @property
+    def bm25_encoder(self):
+        if self._bm25_encoder is None:
+            self._bm25_encoder = get_shared_bm25_encoder()
+        return self._bm25_encoder
 
     def delete_by_source_url(self, source_url: str):
         try:
@@ -105,6 +125,7 @@ class PineconeVectorStore:
         texts = [doc.page_content for doc in docs]
         
         dense_vectors = self.embeddings.embed_documents(texts)
+        # Use property to lazy load shared encoder
         sparse_vectors = self.bm25_encoder.encode_documents(texts)
 
         # Add ingestion timestamp to all docs
@@ -128,7 +149,7 @@ class PineconeVectorStore:
     def get_hybrid_retriever(self, top_k: int = 5) -> PineconeHybridSearchRetriever:
         return PineconeHybridSearchRetriever(
             embeddings=self.embeddings.embeddings,
-            sparse_encoder=self.bm25_encoder,
+            sparse_encoder=self.bm25_encoder, # Triggers lazy load property
             index=self.index,
             namespace=self.namespace,
             top_k=top_k,
