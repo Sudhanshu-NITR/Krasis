@@ -3,7 +3,7 @@ schedule
 psycopg2-binary
 beautifulsoup4
 python-dotenv
-protobuf>=5.29.3
+protobuf
 
 lxml
 
@@ -16,8 +16,7 @@ google-generativeai
 langchain-google-genai
 
 pinecone-text
-pinecone-client
-pinecone
+pinecone<=8.0.0
 
 fastapi
 uvicorn
