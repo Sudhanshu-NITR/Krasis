@@ -12,10 +12,10 @@ class SitemapMonitor:
     into the persistent ingestion queue.
     """
 
-    def __init__(self, sitemap_url: str, db_path: str):
+    def __init__(self, sitemap_url: str, db_path: str, source: str = "langchain"):
         self.sitemap_url = sitemap_url
 
-        self.state = get_state_store(source_name="default")
+        self.state = get_state_store(source_name=source)
 
         self.queue = get_queue()
 
@@ -33,7 +33,6 @@ class SitemapMonitor:
         ns = {"ns": "http://www.sitemaps.org/schemas/sitemap/0.9"}
 
         urls = root.findall("ns:url", ns)
-        urls = urls[:3]  # TEMPORARY: Only test 3 URLs
         print(f"[*] Analyzing {len(urls)} URLs for updates...")
 
         for url_node in urls:

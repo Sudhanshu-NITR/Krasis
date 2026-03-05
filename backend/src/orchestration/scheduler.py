@@ -1,3 +1,4 @@
+import os
 import schedule
 import time
 from config.settings import get_config, CHECK_INTERVAL_HOURS
@@ -17,6 +18,7 @@ def run_ingestion_cycle():
             monitor = SitemapMonitor(
                 sitemap_url=cfg.sitemap_url,
                 db_path=cfg.state_db_path
+                source=source
             )
 
             # 1. Check for changes (this populates the queue)
@@ -29,8 +31,9 @@ def run_ingestion_cycle():
     print("[*] Ingestion cycle complete.")
 
 def start_scheduler():
-    # TODO: for development run once immidiately, change for production
-    run_ingestion_cycle()
+    if os.getenv("ENV", "DEV") == "DEV":
+        print("[*] Running initial ingestion cycle for development...")
+        run_ingestion_cycle()
 
     # Schedule
     schedule.every(CHECK_INTERVAL_HOURS).hours.do(run_ingestion_cycle)

@@ -53,10 +53,6 @@ def get_config(source_name: str) -> DataSourceConfig:
         )
     }
     
-    # "default" maps to langchain for backward compatibility or ease of use
-    if source_name == "default":
-        return configs["langchain"]
-
     if source_name not in configs:
         raise ValueError(f"Unknown source: {source_name}")
         

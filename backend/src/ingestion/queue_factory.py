@@ -17,7 +17,7 @@ def get_queue():
     # Fallback to SQLite
     return SQLiteQueue()
 
-def get_state_store(source_name: str = "default"):
+def get_state_store(source_name: str = "langchain"):
     """
     Factory function for SitemapState.
     """

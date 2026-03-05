@@ -18,7 +18,7 @@ app.add_middleware(
 
 class ChatRequest(BaseModel):
     query: str
-    doc_mode: str = "default"
+    doc_mode: str = "langchain"
 
 @app.get("/health")
 async def health_check():
