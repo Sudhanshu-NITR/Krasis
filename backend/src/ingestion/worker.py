@@ -23,10 +23,9 @@ def run_worker(source_name: str = "langchain"):
         return
 
     # 1. Instantiate Dependencies
-    # Use generic MarkdownLoader for both LangChain and Stripe
     loader = MarkdownLoader()
     
-    splitter = MarkdownDocsSplitter()
+    splitter = MarkdownDocsSplitter(doc_site=source_name)
     
     store = PineconeVectorStore(
         index_name=PINECONE_INDEX_NAME,

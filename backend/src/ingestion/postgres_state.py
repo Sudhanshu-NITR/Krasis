@@ -12,8 +12,14 @@ class PostgresState:
         self.table = table
         self._init_db()
 
-    def _get_conn(self):
-        return psycopg2.connect(self.db_url)
+    def _get_conn(self, max_retries=5):
+        for attempt in range(max_retries):
+            try:
+                return psycopg2.connect(self.db_url)
+            except psycopg2.OperationalError:
+                if attempt == max_retries - 1:
+                    raise
+                time.sleep(2 ** attempt)
 
     def _init_db(self):
         # Note: using DOUBLE PRECISION for timestamps to match SQLite implementation

@@ -52,7 +52,19 @@ class SQLiteQueue:
         ON CONFLICT(url) DO UPDATE SET
             lastmod = excluded.lastmod,
             metadata_json = excluded.metadata_json,
-            priority = MAX({self.table}.priority, excluded.priority)
+            priority = MAX({self.table}.priority, excluded.priority),
+            status = CASE 
+                WHEN {self.table}.status IN ('failed', 'succeeded') THEN 'pending' 
+                ELSE {self.table}.status 
+            END,
+            attempts = CASE
+                WHEN {self.table}.status IN ('failed', 'succeeded') THEN 0
+                ELSE {self.table}.attempts
+            END,
+            next_try_at = CASE 
+                WHEN {self.table}.status IN ('failed', 'succeeded') THEN 0 
+                ELSE {self.table}.next_try_at 
+            END
         """
         self.conn.execute(sql, (url, doc_id, lastmod, meta_json, priority, now))
         self.conn.commit()

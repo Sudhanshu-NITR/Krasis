@@ -7,7 +7,7 @@ from src.core.chat import get_assistant
 from fastapi.middleware.cors import CORSMiddleware
 from src.ingestion.queue_factory import get_queue
 
-app = FastAPI(title="Krasis Intelligen Docs API")
+app = FastAPI(title="Krasis Intelligent Docs API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,9 +37,8 @@ async def ask_docs(request: ChatRequest):
     """
     Standard endpoint that returns the full response at once.
     """
-    print(request.query)
-    # Lazy load assistant
-    assistant = get_assistant()
+    # Lazy load assistant with the requested mode
+    assistant = get_assistant(request.doc_mode)
     result = assistant.ask(request.query)
     if result["status"] == "error":
         raise HTTPException(status_code=500, detail=result["message"])
@@ -52,8 +51,8 @@ async def ask_docs_stream(request: ChatRequest):
     """
     async def generate():
         try:
-            # Lazy load
-            assistant = get_assistant()
+            # Lazy load assistant with the requested mode
+            assistant = get_assistant(request.doc_mode)
             for chunk in assistant.chain.stream(request.query):
                 # We yield the chunk as a server-sent event (SSE)
                 yield f"data: {json.dumps({'token': chunk})}\n\n"

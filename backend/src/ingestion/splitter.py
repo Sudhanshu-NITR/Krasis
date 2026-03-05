@@ -15,7 +15,8 @@ class MarkdownDocsSplitter:
         ("####", "h4"),
     ]
 
-    def __init__(self):
+    def __init__(self, doc_site: str = "langchain"):
+        self.doc_site = doc_site
         self.header_splitter = MarkdownHeaderTextSplitter(
             headers_to_split_on=self.HEADERS_TO_SPLIT_ON,
             strip_headers=False,
@@ -38,7 +39,7 @@ class MarkdownDocsSplitter:
                 "doc_id": doc_id,
                 "source_url": source_url,
                 "source_type": "markdown",
-                "doc_site": "langchain",
+                "doc_site": self.doc_site,
                 "contains_code": contains_code,
             })
 

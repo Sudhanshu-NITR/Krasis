@@ -3,12 +3,11 @@ from src.store.vector_store import PineconeVectorStore
 from src.core.rag_chain import create_rag_chain
 
 class DocAssistant:
-    def __init__(self):
-        print("Initializing DocAssistant...")
+    def __init__(self, namespace="langchain_docs"):
+        print(f"Initializing DocAssistant for namespace: {namespace}...")
         self.llm = get_google_genai_llm()
 
-
-        self.vector_store = PineconeVectorStore()
+        self.vector_store = PineconeVectorStore(namespace=namespace)
         self.retriever = self.vector_store.get_hybrid_retriever()
 
         self.chain = create_rag_chain(self.retriever, self.llm)
@@ -29,17 +28,19 @@ class DocAssistant:
                 "message": str(e)
             }
         
-# Global singleton instance
-_assistant_instance = None
+# Global singleton instance cache mapping source_name to an assistant
+_assistant_instances = {}
 
-def get_assistant():
+def get_assistant(source_name="langchain"):
     """
-    Lazy load the DocAssistant singleton.
+    Lazy load the DocAssistant singleton dictionary via config mapping.
     """
-    global _assistant_instance
-    if _assistant_instance is None:
-        _assistant_instance = DocAssistant()
-    return _assistant_instance
+    global _assistant_instances
+    if source_name not in _assistant_instances:
+        from config.settings import get_config
+        cfg = get_config(source_name)
+        _assistant_instances[source_name] = DocAssistant(namespace=cfg.pinecone_namespace)
+    return _assistant_instances[source_name]
 
 # Removed global instantiation to save memory on import
 # assistant = DocAssistant()

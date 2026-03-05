@@ -33,6 +33,7 @@ class SitemapMonitor:
         ns = {"ns": "http://www.sitemaps.org/schemas/sitemap/0.9"}
 
         urls = root.findall("ns:url", ns)
+        urls = urls[:3]  # TEMPORARY: Only test 3 URLs
         print(f"[*] Analyzing {len(urls)} URLs for updates...")
 
         for url_node in urls:

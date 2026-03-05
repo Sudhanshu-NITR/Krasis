@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 load_dotenv()
-from src.core.chat import assistant
+from src.core.chat import get_assistant
 
 def run_test_suite():
     test_queries = [
@@ -13,6 +13,8 @@ def run_test_suite():
     ]
 
     print(f"--- Starting Test Suite ---\n")
+    
+    assistant = get_assistant()
 
     for i, query in enumerate(test_queries, 1):
         print(f"Test {i}: {query}")

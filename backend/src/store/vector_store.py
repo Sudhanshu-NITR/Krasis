@@ -1,51 +1,51 @@
-from typing import List, Optional, Dict
-import os
+from typing import List, Optional
 import time
 
 from pinecone.grpc import PineconeGRPC as Pinecone
 from pinecone import ServerlessSpec
 from langchain_core.documents import Document
-from src.store.embeddings import GeminiEmbeddingClient
 from langchain_community.retrievers import PineconeHybridSearchRetriever
-from pinecone_text.sparse import BM25Encoder
+from langchain_pinecone.embeddings import PineconeSparseEmbeddings
 
+from src.store.embeddings import GeminiEmbeddingClient
 from config.settings import (
     PINECONE_API_KEY,
-    PINECONE_INDEX_NAME as DEFAULT_INDEX_NAME, # Rename for clarity
+    PINECONE_INDEX_NAME as DEFAULT_INDEX_NAME,
     EMBEDDING_DIM,
-    PINECONE_NAMESPACE as DEFAULT_NAMESPACE, # Rename for clarity
+    PINECONE_NAMESPACE as DEFAULT_NAMESPACE,
 )
 
-# Global singleton for BM25 Encoder to save memory on 512MB instances
-_SHARED_BM25_ENCODER = None
 
-def get_shared_bm25_encoder():
-    global _SHARED_BM25_ENCODER
-    if _SHARED_BM25_ENCODER is None:
-        # Cache BM25 encoder to avoid re-downloading default corpus on every restart
-        bm25_file = "data/bm25_values.json"
-        # Ensure data directory exists
-        os.makedirs(os.path.dirname(bm25_file), exist_ok=True)
+class QuickSparseEncoder:
+    def __init__(self, pc, model_name="pinecone-sparse-english-v0"):
+        self.pc = pc
+        self.model_name = model_name
         
-        encoder = BM25Encoder()
-        if os.path.exists(bm25_file):
-            print(f"[*] Loading BM25 encoder from {bm25_file}...")
-            encoder.load(bm25_file)
-        else:
-            print("[*] Downloading default BM25 encoder (this may take a while)...")
-            encoder = encoder.default()
-            encoder.dump(bm25_file)
-            print(f"[*] BM25 encoder saved to {bm25_file}")
+    def encode_queries(self, queries: str):
+        if isinstance(queries, str):
+            queries = [queries]
+        res = self.pc.inference.embed(
+            model=self.model_name,
+            inputs=queries,
+            parameters={"input_type": "query"}
+        )
+        return {"indices": res[0].sparse_indices, "values": res[0].sparse_values}
         
-        _SHARED_BM25_ENCODER = encoder
-    return _SHARED_BM25_ENCODER
+    def encode_documents(self, texts: List[str]):
+        res = self.pc.inference.embed(
+            model=self.model_name,
+            inputs=texts,
+            parameters={"input_type": "passage", "truncate": "END"}
+        )
+        return [{"indices": r.sparse_indices, "values": r.sparse_values} for r in res]
+
 
 class PineconeVectorStore:
     """
-    Unified Pinecone store:
-    - owns the index
-    - handles ingestion (delete + upsert)
-    - exposes LangChain hybrid retriever
+    Memory-efficient Hybrid Pinecone Store for Krasis:
+    - Uses Gemini for Dense (semantic) embeddings.
+    - Uses Pinecone Inference API for Sparse (keyword) embeddings (Zero RAM impact).
+    - Supports incremental updates for LangChain/Stripe/Next.js docs.
     """
 
     def __init__(self, index_name: str = DEFAULT_INDEX_NAME, namespace: str = DEFAULT_NAMESPACE):
@@ -53,32 +53,24 @@ class PineconeVectorStore:
         self.index_name = index_name
         self.namespace = namespace
 
-        # Only check/create index if we suspect it's needed (or catch errors during ops)
-        # Checking list_indexes() on every init adds startup latency
-        # But for robustness we'll keep it for now, unless it times out.
+        # Ensure index exists with 'dotproduct' metric (required for hybrid)
         if self.index_name not in self.pc.list_indexes().names():
             self.pc.create_index(
                 name=self.index_name,
                 dimension=EMBEDDING_DIM,
-                metric="dotproduct",
-                spec=ServerlessSpec(
-                    cloud="aws",
-                    region="us-east-1"
-                ),
+                metric="dotproduct", 
+                spec=ServerlessSpec(cloud="aws", region="us-east-1"),
             )
 
         self.index = self.pc.Index(name=self.index_name)
         self.embeddings = GeminiEmbeddingClient()
         
-        # Lazy load BM25 only when creating retriever or upserting
-        self._bm25_encoder = None
+        # Lightweight wrapper for the sparse API (no local model loaded)
+        self.sparse_encoder = QuickSparseEncoder(self.pc)
 
-    @property
-    def bm25_encoder(self):
-        if self._bm25_encoder is None:
-            self._bm25_encoder = get_shared_bm25_encoder()
-        return self._bm25_encoder
-
+    # ----------------------------
+    # Incremental Logic Helpers
+    # ----------------------------
     def delete_by_source_url(self, source_url: str):
         try:
             self.index.delete(
@@ -86,22 +78,13 @@ class PineconeVectorStore:
                 namespace=self.namespace,
             )
         except Exception as e:
-            # First-time namespace creation case → safe to ignore
             if "Namespace not found" not in str(e):
                 raise
 
     def get_document_last_ingested(self, source_url: str) -> Optional[float]:
-        """
-        Check if a document exists by fetching 1 vector with the source_url filter.
-        Returns the 'last_ingested_at' timestamp from metadata if found, else None.
-        """
         try:
-            # We generate a dummy vector of 0s to query because Pinecone doesn't support metadata-only queries efficiently
-            # without a vector. However, a better way for just checking existence is `query` with top_k=1
-            # and a filter.
-            
+            # Query using a zero vector to find the latest timestamp for a URL
             dummy_vector = [0.0] * EMBEDDING_DIM
-            
             result = self.index.query(
                 vector=dummy_vector,
                 top_k=1,
@@ -109,48 +92,63 @@ class PineconeVectorStore:
                 namespace=self.namespace,
                 include_metadata=True
             )
-            
             if result.matches:
-                metadata = result.matches[0].metadata
-                # Check for ingested timestamp in metadata (we need to ensure we save this during upsert!)
-                return metadata.get("ingested_at")
-            
+                return result.matches[0].metadata.get("ingested_at")
             return None
-            
         except Exception:
-            # If namespace doesn't exist or other error, assume not ingested
             return None
 
+    # ----------------------------
+    # Upsert Logic (Memory Efficient)
+    # ----------------------------
     def upsert_documents(self, docs: List[Document]):
+        if not docs:
+            return
+
         texts = [doc.page_content for doc in docs]
         
+        # 1. Get Dense Vectors (Gemini)
         dense_vectors = self.embeddings.embed_documents(texts)
-        # Use property to lazy load shared encoder
-        sparse_vectors = self.bm25_encoder.encode_documents(texts)
-
-        # Add ingestion timestamp to all docs
-        now_ts = time.time()
         
+        # 2. Get Sparse Vectors (Pinecone API - Zero local RAM usage)
+        sparse_res = self.pc.inference.embed(
+            model="pinecone-sparse-english-v0",
+            inputs=texts,
+            parameters={"input_type": "passage", "truncate": "END"}
+        )
+
+        now_ts = time.time()
         vectors = []
-        for i, (doc, dense, sparse) in enumerate(zip(docs, dense_vectors, sparse_vectors)):
+
+        for i, (doc, dense, sparse) in enumerate(zip(docs, dense_vectors, sparse_res)):
             metadata = doc.metadata.copy()
-            metadata["context"] = doc.page_content
-            metadata["ingested_at"] = now_ts # Save timestamp for future checks!
-            
+            metadata["text"] = doc.page_content  # Required for Retriever context
+            metadata["ingested_at"] = now_ts
+
             vectors.append({
                 "id": f"{doc.metadata.get('doc_id', 'unknown')}::chunk_{i}",
                 "values": dense,
-                "sparse_values": sparse, 
+                "sparse_values": {"indices": sparse.sparse_indices, "values": sparse.sparse_values}, # Native hybrid support
                 "metadata": metadata,
             })
 
+        # Upsert in batches to Pinecone
         self.index.upsert(vectors=vectors, namespace=self.namespace)
 
-    def get_hybrid_retriever(self, top_k: int = 5) -> PineconeHybridSearchRetriever:
+    # ----------------------------
+    # Hybrid Retriever
+    # ----------------------------
+    def get_hybrid_retriever(self, top_k: int = 5, alpha: float = 0.5):
+        """
+        Returns a retriever that combines semantic (Gemini) and keyword (Pinecone) search.
+        alpha=1.0 is pure semantic, alpha=0.0 is pure keyword.
+        """
         return PineconeHybridSearchRetriever(
             embeddings=self.embeddings.embeddings,
-            sparse_encoder=self.bm25_encoder, # Triggers lazy load property
+            sparse_encoder=self.sparse_encoder,
             index=self.index,
             namespace=self.namespace,
+            text_key="text",
             top_k=top_k,
+            alpha=alpha,
         )

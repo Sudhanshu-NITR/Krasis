@@ -11,10 +11,16 @@ class PostgresQueue:
         self.table = table
         self._init_table()
 
-    def _get_conn(self):
-        conn = psycopg2.connect(self.db_url)
-        conn.autocommit = False # We manage transactions manually
-        return conn
+    def _get_conn(self, max_retries=5):
+        for attempt in range(max_retries):
+            try:
+                conn = psycopg2.connect(self.db_url)
+                conn.autocommit = False # We manage transactions manually
+                return conn
+            except psycopg2.OperationalError:
+                if attempt == max_retries - 1:
+                    raise
+                time.sleep(2 ** attempt)
 
     def _init_table(self):
         """
@@ -60,11 +66,15 @@ class PostgresQueue:
             metadata_json = EXCLUDED.metadata_json,
             priority = GREATEST({self.table}.priority, EXCLUDED.priority),
             status = CASE 
-                WHEN {self.table}.status = 'failed' THEN 'pending' -- Retry failed items if re-queued
+                WHEN {self.table}.status IN ('failed', 'succeeded') THEN 'pending' -- Retry failed/succeeded items if re-queued
                 ELSE {self.table}.status 
             END,
+            attempts = CASE
+                WHEN {self.table}.status IN ('failed', 'succeeded') THEN 0
+                ELSE {self.table}.attempts
+            END,
             next_try_at = CASE 
-                WHEN {self.table}.status = 'failed' THEN 0 
+                WHEN {self.table}.status IN ('failed', 'succeeded') THEN 0 
                 ELSE {self.table}.next_try_at 
             END
         """
@@ -145,6 +155,18 @@ class PostgresQueue:
             conn.commit()
         finally:
             conn.close()
+
+    def requeue_front(self, id: int):
+        now = time.time()
+        sql = f"""
+        UPDATE {self.table} 
+        SET status='pending', priority = priority + 10, attempts=0, processing_started_at=NULL, next_try_at = %s 
+        WHERE id = %s
+        """
+        with self._get_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, (now, id))
+            conn.commit()
 
     def count_pending(self) -> int:
         now = time.time()
