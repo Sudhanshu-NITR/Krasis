@@ -12,7 +12,6 @@ from config.settings import (
     PINECONE_API_KEY,
     PINECONE_INDEX_NAME as DEFAULT_INDEX_NAME,
     EMBEDDING_DIM,
-    PINECONE_NAMESPACE as DEFAULT_NAMESPACE,
 )
 
 
@@ -48,7 +47,7 @@ class PineconeVectorStore:
     - Supports incremental updates for LangChain/Stripe/Next.js docs.
     """
 
-    def __init__(self, index_name: str = DEFAULT_INDEX_NAME, namespace: str = DEFAULT_NAMESPACE):
+    def __init__(self, index_name: str = DEFAULT_INDEX_NAME, namespace: str = "langchain_docs"):
         self.pc = Pinecone(api_key=PINECONE_API_KEY)
         self.index_name = index_name
         self.namespace = namespace

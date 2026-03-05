@@ -17,7 +17,7 @@ def run_ingestion_cycle():
             
             monitor = SitemapMonitor(
                 sitemap_url=cfg.sitemap_url,
-                db_path=cfg.state_db_path
+                db_path=cfg.state_db_path,
                 source=source
             )
 

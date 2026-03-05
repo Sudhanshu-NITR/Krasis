@@ -4,13 +4,9 @@ from dataclasses import dataclass
 
 load_dotenv()
 
-# Target Documentation (Legacy/Default)
-SITEMAP_URL = os.getenv("SITEMAP_URL", "https://docs.langchain.com/sitemap.xml")
-
 # Paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, "data")
-STATE_DB_PATH = os.path.join(DATA_DIR, "state", "sitemap_state.db") # Legacy default
 
 # Scheduling
 CHECK_INTERVAL_HOURS = 24
@@ -18,7 +14,6 @@ CHECK_INTERVAL_HOURS = 24
 # Pinecone
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "langchain-hybrid-search")
-PINECONE_NAMESPACE = "langchain_docs" # Legacy default
 EMBEDDING_DIM = 3072
 
 # Gemini (dense embeddings)
