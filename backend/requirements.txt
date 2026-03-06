@@ -16,7 +16,7 @@ google-generativeai
 langchain-google-genai
 
 pinecone-text
-pinecone<=8.0.0
+pinecone
 langchain-pinecone
 
 fastapi
