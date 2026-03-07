@@ -3,7 +3,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import json
 
-from src.core.chat import get_assistant
+from app.services.chat_service import get_assistant
 
 router = APIRouter()
 

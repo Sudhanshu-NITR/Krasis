@@ -2,8 +2,7 @@ import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
-from src.ingestion.sitemap_state import SitemapState
-from src.ingestion.queue_factory import get_queue, get_state_store
+from .queues.queue_factory import get_queue, get_state_store
 
 
 class SitemapMonitor:

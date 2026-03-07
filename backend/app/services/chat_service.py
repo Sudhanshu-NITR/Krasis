@@ -1,6 +1,6 @@
-from src.llms.google_genai import get_google_genai_llm
-from src.store.vector_store import PineconeVectorStore
-from src.core.rag_chain import create_rag_chain
+from app.llms.google_genai import get_google_genai_llm
+from app.retrieval.vector_store import PineconeVectorStore
+from app.chain.rag_chain import create_rag_chain
 
 class DocAssistant:
     def __init__(self, namespace="langchain_docs"):
@@ -37,7 +37,7 @@ def get_assistant(source_name="langchain"):
     """
     global _assistant_instances
     if source_name not in _assistant_instances:
-        from config.settings import get_config
+        from app.config.settings import get_config
         cfg = get_config(source_name)
         _assistant_instances[source_name] = DocAssistant(namespace=cfg.pinecone_namespace)
     return _assistant_instances[source_name]

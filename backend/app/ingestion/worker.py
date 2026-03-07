@@ -1,14 +1,14 @@
 from datetime import datetime
 import time
 import argparse
-from src.ingestion.queue_factory import get_queue, get_state_store
-from src.ingestion.pipeline import process_url
-from config.settings import get_config, PINECONE_INDEX_NAME
+from app.ingestion.queues.queue_factory import get_queue, get_state_store
+from app.ingestion.pipeline import process_url
+from app.config.settings import get_config, PINECONE_INDEX_NAME
 
 # Loaders
-from src.ingestion.loader import MarkdownLoader
-from src.ingestion.splitter import MarkdownDocsSplitter
-from src.store.vector_store import PineconeVectorStore
+from app.ingestion.loader import MarkdownLoader
+from app.ingestion.splitter import MarkdownDocsSplitter
+from app.retrieval.vector_store import PineconeVectorStore
 
 QUEUE_POLL_SECONDS = 2
 RATE_LIMIT_SECONDS = 5  # increased to avoid hitting Gemini Free Tier (100 RPM) 

@@ -1,6 +1,6 @@
 from langchain_core.runnables import RunnablePassthrough, RunnableParallel, RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
-from src.core.prompts import get_prompt_template
+from app.prompts.rag_chain_prompts import get_prompt_template
 
 def format_docs(docs):
     """

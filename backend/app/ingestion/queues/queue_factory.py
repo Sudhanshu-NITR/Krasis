@@ -1,8 +1,8 @@
 import os
 from .sqlite_queue import SQLiteQueue
 from .postgres_queue import PostgresQueue
-from .sitemap_state import SitemapState
-from .postgres_state import PostgresState
+from ..state.sitemap_state import SitemapState
+from ..state.postgres_state import PostgresState
 
 def get_queue():
     """

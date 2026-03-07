@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 load_dotenv()
-from src.core.chat import get_assistant
+from app.services.chat_service import get_assistant
 
 def run_test_suite():
     test_queries = [

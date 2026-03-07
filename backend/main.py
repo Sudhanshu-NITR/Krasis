@@ -2,9 +2,9 @@ import os
 import threading
 import logging
 import uvicorn
-from src.orchestration.scheduler import start_scheduler
-from src.ingestion.worker import run_worker
-from api.api import app
+from app.scheduler.scheduler import start_scheduler
+from app.ingestion.worker import run_worker
+from app.api.api import app
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)

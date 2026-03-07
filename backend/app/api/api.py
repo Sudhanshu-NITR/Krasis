@@ -2,8 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from src.routes.chat_routes import router as chat_router
-from src.ingestion.queue_factory import get_queue
+from app.api.chat_routes import router as chat_router
+from app.ingestion.queues.queue_factory import get_queue
 
 app = FastAPI(title="Krasis Intelligent Docs API")
 

@@ -1,6 +1,6 @@
 from typing import List
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from config.settings import GOOGLE_API_KEY_EMBEDDINGS, GEMINI_EMBED_MODEL
+from app.config.settings import GOOGLE_API_KEY_EMBEDDINGS, GEMINI_EMBED_MODEL
 
 class GeminiEmbeddingClient:
     """

@@ -6,37 +6,13 @@ from pinecone import ServerlessSpec
 from langchain_core.documents import Document
 from langchain_community.retrievers import PineconeHybridSearchRetriever
 
-
-from src.store.embeddings import GeminiEmbeddingClient
-from config.settings import (
+from app.retrieval.encoder import QuickSparseEncoder
+from app.retrieval.embeddings import GeminiEmbeddingClient
+from app.config.settings import (
     PINECONE_API_KEY,
     PINECONE_INDEX_NAME as DEFAULT_INDEX_NAME,
     EMBEDDING_DIM,
 )
-
-
-class QuickSparseEncoder:
-    def __init__(self, pc, model_name="pinecone-sparse-english-v0"):
-        self.pc = pc
-        self.model_name = model_name
-        
-    def encode_queries(self, queries: str):
-        if isinstance(queries, str):
-            queries = [queries]
-        res = self.pc.inference.embed(
-            model=self.model_name,
-            inputs=queries,
-            parameters={"input_type": "query"}
-        )
-        return {"indices": res[0].sparse_indices, "values": res[0].sparse_values}
-        
-    def encode_documents(self, texts: List[str]):
-        res = self.pc.inference.embed(
-            model=self.model_name,
-            inputs=texts,
-            parameters={"input_type": "passage", "truncate": "END"}
-        )
-        return [{"indices": r.sparse_indices, "values": r.sparse_values} for r in res]
 
 
 class PineconeVectorStore:

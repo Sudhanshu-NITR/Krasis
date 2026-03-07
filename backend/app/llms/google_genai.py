@@ -1,6 +1,6 @@
 import os
 from langchain_google_genai import ChatGoogleGenerativeAI, HarmBlockThreshold, HarmCategory
-from config.settings import (
+from app.config.settings import (
     GOOGLE_API_KEY_GENERATIVE, 
     CHAT_MODEL_NAME
 )

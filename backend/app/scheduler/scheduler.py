@@ -1,9 +1,8 @@
 import os
 import schedule
 import time
-from config.settings import get_config, CHECK_INTERVAL_HOURS
-from src.ingestion.monitor import SitemapMonitor
-from src.ingestion.sqlite_queue import SQLiteQueue
+from app.config.settings import get_config, CHECK_INTERVAL_HOURS
+from app.ingestion.monitor import SitemapMonitor
 
 SOURCES = ["langchain", "stripe"]
 

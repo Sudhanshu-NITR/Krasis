@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List
 
 class Source(BaseModel):
     title: str = Field(description="The title of the documentation page")
