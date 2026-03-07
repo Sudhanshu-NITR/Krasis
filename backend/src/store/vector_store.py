@@ -1,11 +1,11 @@
 from typing import List, Optional
 import time
 
-from pinecone.grpc import PineconeGRPC as Pinecone
+from pinecone import Pinecone
 from pinecone import ServerlessSpec
 from langchain_core.documents import Document
 from langchain_community.retrievers import PineconeHybridSearchRetriever
-from langchain_pinecone.embeddings import PineconeSparseEmbeddings
+
 
 from src.store.embeddings import GeminiEmbeddingClient
 from config.settings import (

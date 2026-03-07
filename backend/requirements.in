@@ -12,6 +12,9 @@ psycopg2-binary
 
 langchain
 langgraph
+langchain_text_splitters
+langchain-community
+pinecone-text
 
 google-generativeai
 langchain-google-genai
