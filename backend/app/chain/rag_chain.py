@@ -1,20 +1,8 @@
 from langchain_core.runnables import RunnablePassthrough, RunnableParallel, RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
 from app.prompts.rag_chain_prompts import get_prompt_template
+from app.helpers.format_docs_helper import format_docs
 from operator import itemgetter
-
-def format_docs(docs):
-    """
-    Formats retrieved documents into a string while preserving source metadata.
-    This helps the LLM cite specific documentation URLs.
-    """
-    return "\n\n".join(
-        f"--- DOCUMENT START ---\n"
-        f"Content: {doc.page_content}\n"
-        f"Source URL: {doc.metadata.get('source_url', doc.metadata.get('url', 'No link available'))}\n"
-        f"--- DOCUMENT END ---"
-        for doc in docs
-    )
 
 def create_rag_chain(retriever, llm):
     """

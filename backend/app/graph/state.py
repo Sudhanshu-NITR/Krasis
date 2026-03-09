@@ -6,5 +6,4 @@ class ChatState(TypedDict):
     """
     ChatState of the Chatbot
     """
-    question: str
     messages: Annotated[list[BaseMessage], add_messages]

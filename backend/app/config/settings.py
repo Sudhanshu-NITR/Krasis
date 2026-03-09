@@ -22,6 +22,9 @@ GOOGLE_API_KEY_GENERATIVE = os.getenv("GOOGLE_API_KEY_GENERATIVE")
 GEMINI_EMBED_MODEL = "models/gemini-embedding-001"
 CHAT_MODEL_NAME = "gemini-2.5-flash"
 
+# Neon Postgres DB URL 
+DATABASE_URL = os.getenv("DATABASE_URL")
+
 @dataclass
 class DataSourceConfig:
     name: str
