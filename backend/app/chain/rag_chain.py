@@ -1,6 +1,7 @@
 from langchain_core.runnables import RunnablePassthrough, RunnableParallel, RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
 from app.prompts.rag_chain_prompts import get_prompt_template
+from operator import itemgetter
 
 def format_docs(docs):
     """
@@ -24,9 +25,10 @@ def create_rag_chain(retriever, llm):
 
     # Step 1: Prepare the context and question in parallel
     context_and_question = RunnableParallel({
-        "context": retriever | RunnableLambda(format_docs),
-        "question": RunnablePassthrough(),
-        # "chat_history": 
+        # Pass only the "question" string for the Pinecone retriever lookup
+        "context": itemgetter("question") | retriever | RunnableLambda(format_docs),
+        "question": itemgetter("question"),
+        "chat_history": itemgetter("chat_history") 
     })
 
     # Step 2: Combine into the final chain

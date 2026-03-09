@@ -12,12 +12,12 @@ class DocAssistant:
 
         self.chain = create_rag_chain(self.retriever, self.llm)
 
-    def ask(self, query: str):
+    def ask(self, payload: dict):
         """
         The main entry point for queries.
         """
         try:
-            response = self.chain.invoke(query)
+            response = self.chain.invoke(payload)
             return {
                 "status": "success",
                 "answer": response

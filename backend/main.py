@@ -26,11 +26,12 @@ def run_worker_thread():
 if __name__ == "__main__":
     logger.info("Starting backend services...")
 
-    scheduler_thread = threading.Thread(target=run_scheduler_thread, daemon=True)
-    worker_thread = threading.Thread(target=run_worker_thread, daemon=True)
+    if os.getenv("ENV", "PROD") != "DEV":
+        scheduler_thread = threading.Thread(target=run_scheduler_thread, daemon=True)
+        worker_thread = threading.Thread(target=run_worker_thread, daemon=True)
 
-    scheduler_thread.start()
-    worker_thread.start()
+        scheduler_thread.start()
+        worker_thread.start()
 
     port = int(os.environ.get("PORT", 8000))
     logger.info(f"Starting API Server at http://0.0.0.0:{port}")

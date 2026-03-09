@@ -45,6 +45,11 @@ export default function Chat() {
             timestamp: Date.now()
         };
 
+        const historyPayload = messages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+        }));
+
         setMessages(prev => [...prev, userMsg, aiMsg]);
         setInput('');
         setIsLoading(true);
@@ -53,7 +58,11 @@ export default function Chat() {
             const response = await fetch(`${API_URL}/ask/stream`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: query, doc_mode: docMode })
+                body: JSON.stringify({
+                    query: query,
+                    doc_mode: docMode,
+                    chat_history: historyPayload
+                })
             });
 
             if (!response.body) throw new Error("No response body");
