@@ -55,13 +55,15 @@ export default function Chat() {
         setIsLoading(true);
 
         try {
+            const CONFIG = { 'configurable': { 'thread_id': 'thread-1' } }
             const response = await fetch(`${API_URL}/ask/stream`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     query: query,
                     doc_mode: docMode,
-                    chat_history: historyPayload
+                    chat_history: historyPayload,
+                    config: CONFIG
                 })
             });
 
