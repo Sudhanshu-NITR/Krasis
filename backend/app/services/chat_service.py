@@ -83,7 +83,7 @@ class DocAssistant_v2:
         A generator for streaming queries.
         """
         try:
-            for chunk in self.graph.stream({
+            for chunk, metadata in self.graph.stream({
                 'messages': [HumanMessage(content=payload["question"])]}, 
                 config=config,
                 stream_mode='messages'
@@ -91,6 +91,7 @@ class DocAssistant_v2:
                 yield f"data: {json.dumps({'token': chunk.content})}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
 
 
 # Global singleton instance cache mapping source_name to an assistant
@@ -104,5 +105,5 @@ def get_assistant(source_name="langchain"):
     if source_name not in _assistant_instances:
         from app.config.settings import get_config
         cfg = get_config(source_name)
-        _assistant_instances[source_name] = DocAssistant(namespace=cfg.pinecone_namespace)
+        _assistant_instances[source_name] = DocAssistant_v2(namespace=cfg.pinecone_namespace)
     return _assistant_instances[source_name]

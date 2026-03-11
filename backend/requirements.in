@@ -8,11 +8,12 @@ beautifulsoup4
 python-dotenv
 lxml
 
-psycopg2-binary
+psycopg[binary,pool]
 
 langchain
 langgraph
 langchain_text_splitters
+langgraph-checkpoint-postgres
 langchain-community
 pinecone-text
 
